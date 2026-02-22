@@ -16,7 +16,6 @@ class CrawlerService:
         return self.zip_files_dic
 
     def _crawl_page(self, url):
-        print(url)
         if url in self.visited:
             return
 
