@@ -1,28 +1,69 @@
-from models import FileLink, FileLinkDirectory
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+import os
+import pandas as pd
+import logging
+
+from schema_loader import SchemaLoader
+
+logger = logging.getLogger(__name__)
 
 
-def extract_links(html: str, base_url: str):
-    soup = BeautifulSoup(html, "html.parser")
+class Parser:
+    def __init__(self, dataset_config: dict, schema_loader: SchemaLoader):
+        self.dataset_config = dataset_config
+        self.schema_loader = schema_loader
 
-    zip_links: list[FileLink] = []
-    directory_links = []
 
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        full_url = urljoin(base_url, href)
+    def _match_dataset(self, filename: str) -> str | None:
+        for dataset_name, config in self.dataset_config.items():
+            prefix = config.get("prefix")
 
-        if href.endswith(".zip"):
-            zip_links.append(
-                FileLink(
-                    url=full_url,
-                    filename=href.split("/")[-1],
-                    source_page=base_url
-                )
-            )
+            if filename.startswith(prefix):
+                return dataset_name
 
-        elif href.endswith("/") and not href.startswith("../") and not len(full_url) < len(base_url):
-            directory_links.append(full_url)
+        return None
 
-    return FileLinkDirectory(files=zip_links,directory_url=base_url, directory=base_url.split("/")[-2]), directory_links
+    def parse(self, file_paths: list[str]) -> dict[str, pd.DataFrame]:
+        grouped_files = {key: [] for key in self.dataset_config.keys()}
+
+        # grupowanie plików
+        for path in file_paths:
+            filename = os.path.basename(path)
+
+            dataset_name = self._match_dataset(filename)
+
+            if dataset_name:
+                grouped_files[dataset_name].append(path)
+            else:
+                logger.warning(f"No dataset match for file: {filename}")
+
+        # wczytanie i łączenie
+        result = {}
+
+        for dataset_name, paths in grouped_files.items():
+            if not paths:
+                logger.warning(f"No files for dataset: {dataset_name}")
+                continue
+
+            dfs = []
+
+            # pobranie schematu z configu
+            schema_config = self.dataset_config[dataset_name].get("schema")
+            columns = self.schema_loader.load_columns(schema_config)
+
+            for path in paths:
+                try:
+                    config = self.dataset_config[dataset_name]
+                    encoding = config.get("encoding")
+
+                    df = pd.read_csv(path, header=None, encoding=encoding)
+                    df.columns = columns
+
+                    dfs.append(df)
+
+                except Exception as e:
+                    logger.error(f"Failed to read {path}: {e}")
+
+            if dfs:
+                result[dataset_name] = pd.concat(dfs, ignore_index=True)
+
+        return result
