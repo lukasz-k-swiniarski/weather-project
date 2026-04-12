@@ -1,4 +1,4 @@
-from crawler.models import FileLink, FileLinkDirectory
+from models import FileLink, FileLinkDirectory
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
