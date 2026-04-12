@@ -1,5 +1,5 @@
 import requests
-from crawler.parser import extract_links
+from parser import extract_links
 
 
 class CrawlerService:
