@@ -11,7 +11,7 @@ class SchemaLoader:
     def load_columns(self, schema_config: dict) -> list[str]:
         source = schema_config.get("source")
         path = schema_config.get("path")
-        encoding = schema_config.get("encoding", "utf-8")
+        encoding = schema_config.get("encoding")
 
         if not path:
             raise ValueError("Schema config must contain 'path'")

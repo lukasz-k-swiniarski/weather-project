@@ -1,0 +1,17 @@
+dataset_1:
+  prefix: s_d_
+  schema:
+    source: url
+    path: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_nag%c5%82%c3%b3wek.csv
+    encoding: cp1250
+    col_mapp: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_format.txt
+    col_mapp_encoding: cp1250
+
+dataset_2:
+  prefix: s_d_t_
+  schema:
+    source: url
+    path: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_t_nag%c5%82%c3%b3wek.csv
+    encoding: cp1250
+    col_mapp: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_t_format.txt
+    col_mapp_encoding: cp1250

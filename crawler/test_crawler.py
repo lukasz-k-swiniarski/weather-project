@@ -4,11 +4,21 @@ from schema_loader import SchemaLoader
 from zip_extractor import ZipExtractor
 from parser import Parser
 from column_mapping import load_column_mapping
+from postgres_client import PostgresClient
+from config import get_db_config, get_dataset_config, get_dataset_schema_config
 
 if __name__ == "__main__":
 
-    encoding = "cp1250"
+    db_config = get_db_config()
+    db = PostgresClient(**db_config)
+    db.connect()
 
+    dataset_config = get_dataset_config()
+    dataset_schema_config = get_dataset_schema_config()
+
+    #encoding = "cp1250"
+
+    '''
     DATASET_CONFIG = {
         "dataset_1": {
             "prefix": "s_d_",
@@ -31,20 +41,21 @@ if __name__ == "__main__":
             }
         }
     }
+    '''
 
     sorted_dataset_dict = dict(
         sorted(
-            DATASET_CONFIG.items(),
+            dataset_schema_config.items(),
             key=lambda x: len(x[1]["prefix"]),
             reverse=True
         )
     )
 
-    url = "https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/"
+    #url = "https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/"
 
 
 
-    crawler = CrawlerService(url)
+    crawler = CrawlerService(dataset_config['url'])
     downloader = DownloadService()
     extractor = ZipExtractor()
     schema_loader = SchemaLoader()
@@ -57,6 +68,8 @@ if __name__ == "__main__":
             zip_file_path = downloader.download(file.url)
             files = extractor.extract(zip_file_path)
             all_files.extend(files)
+            break
+        break
 
     dataframes = parser.parse(all_files)
 
@@ -64,6 +77,7 @@ if __name__ == "__main__":
         col_mapp_url = sorted_dataset_dict[key]["schema"]["col_mapp"]
         col_mapp = load_column_mapping(col_mapp_url)
         dataframes[key] = df.rename(columns=col_mapp)
+        db.upload_dataframe(dataframes[key],f'Synop data {key}')
         print(dataframes[key])
 
 
