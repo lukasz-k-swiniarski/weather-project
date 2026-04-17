@@ -52,8 +52,7 @@ class Parser:
 
             for path in paths:
                 try:
-                    config = self.dataset_config[dataset_name]
-                    encoding = config.get("encoding")
+                    encoding = schema_config.get("encoding")
 
                     df = pd.read_csv(path, header=None, encoding=encoding)
                     df.columns = columns
