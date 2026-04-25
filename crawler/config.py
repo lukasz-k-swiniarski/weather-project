@@ -10,6 +10,9 @@ def get_db_config():
         "dbname": os.getenv("DB_NAME"),
         "user": os.getenv("DB_USER"),
         "password": os.getenv("DB_PASSWORD"),
+        "schema": os.getenv("DB_SCHEMA"),
+        "if_exists": "replace",
+        "chunksize": 1000,
     }
 
 def get_dataset_config(path="config_dataset_synop_1.yaml"):

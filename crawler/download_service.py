@@ -3,7 +3,7 @@ import requests
 import logging
 from urllib.parse import urlparse
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class DownloadService:
@@ -24,12 +24,12 @@ class DownloadService:
 
         # idempotency – nie pobieraj drugi raz
         if os.path.exists(file_path):
-            logging.info(f"File already exists, skipping: {file_path}")
+            logger.info(f"File already exists, skipping: {file_path}")
             return file_path
 
         for attempt in range(1, self.retries + 1):
             try:
-                logging.info(f"Downloading {url} (attempt {attempt})")
+                logger.info(f"Downloading {url} (attempt {attempt})")
 
                 response = requests.get(url, timeout=self.timeout)
                 response.raise_for_status()
@@ -37,14 +37,14 @@ class DownloadService:
                 with open(file_path, "wb") as f:
                     f.write(response.content)
 
-                logging.info(f"Downloaded: {file_path}")
+                logger.info(f"Downloaded: {file_path}")
                 return file_path
 
             except requests.RequestException as e:
-                logging.warning(f"Attempt {attempt} failed: {e}")
+                logger.warning(f"Attempt {attempt} failed: {e}")
 
                 if attempt == self.retries:
-                    logging.error(f"Failed to download after {self.retries} attempts: {url}")
+                    logger.error(f"Failed to download after {self.retries} attempts: {url}")
                     raise
 
         return None

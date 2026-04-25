@@ -1,4 +1,4 @@
-dataset_1:
+synop_s_d_imgw:
   prefix: s_d_
   schema:
     source: url
@@ -7,7 +7,7 @@ dataset_1:
     col_mapp: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_format.txt
     col_mapp_encoding: cp1250
 
-dataset_2:
+synop_s_d_t_imgw:
   prefix: s_d_t_
   schema:
     source: url
