@@ -51,9 +51,9 @@ class ETLPipeline:
         logger.info("ETL pipeline started")
 
         try:
-            #files = self._collect_files()
-            #dataframes = self._parse_files(files)
-            #self._load_to_db(dataframes)
+            files = self._collect_files()
+            dataframes = self._parse_files(files)
+            self._load_to_db(dataframes)
             self._refresh_db()
 
             logger.info("ETL pipeline finished successfully")
