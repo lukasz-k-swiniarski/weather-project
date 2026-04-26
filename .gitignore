@@ -1,7 +1,8 @@
+.env
 .venv/
 __pycache__/
 .idea/
 data/
 logs/
 tmp/
-
+etl.log
