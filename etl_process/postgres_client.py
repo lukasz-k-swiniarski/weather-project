@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import pandas as pd
 import logging
 
@@ -32,6 +32,7 @@ class PostgresClient:
         df: pd.DataFrame,
         table_name: str,
     ):
+        df.columns = df.columns.str.lower().str.replace(' ', '_')
         df.to_sql(
             name=table_name,
             con=self.engine,
@@ -42,3 +43,10 @@ class PostgresClient:
             method="multi"  # batch insert
         )
 
+    def exec_procedure(
+        self,
+        proc_name: str
+    ):
+        with self.engine.connect() as conn:
+            conn.execute(text(f'CALL {self.schema}.{proc_name}()'))
+            conn.commit()

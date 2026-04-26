@@ -51,9 +51,10 @@ class ETLPipeline:
         logger.info("ETL pipeline started")
 
         try:
-            files = self._collect_files()
-            dataframes = self._parse_files(files)
-            self._load_to_db(dataframes)
+            #files = self._collect_files()
+            #dataframes = self._parse_files(files)
+            #self._load_to_db(dataframes)
+            self._refresh_db()
 
             logger.info("ETL pipeline finished successfully")
 
@@ -111,3 +112,11 @@ class ETLPipeline:
 
             except Exception:
                 logger.exception(f"Failed loading dataset: {key}")
+
+    def _refresh_db(self):
+        logger.info("Starting exec procedures...")
+        try:
+            self.db.exec_procedure('refresh_etl')
+            logger.info("Procedures executed successfully")
+        except Exception as e:
+            logger.exception(f"Procedure exec failed: {e}")
