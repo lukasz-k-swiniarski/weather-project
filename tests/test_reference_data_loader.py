@@ -9,7 +9,7 @@ VALID_MAPPING = {
     "station_name": ["WARSZAWA"],
     "location": ["miasto"],
     "location_name": ["WARSZAWA"],
-    "id": ["PL.TEST.1"],
+    "id": ["LOC001"],
     "station_code": [352200375],
 }
 
@@ -34,4 +34,19 @@ def test_load_station_mapping_rejects_missing_required_value(tmp_path):
     pd.DataFrame(invalid_mapping).to_csv(mapping_path, index=False)
 
     with pytest.raises(ValueError, match="station_name"):
+        ReferenceDataLoader(Mock(), mapping_path).load_station_mapping()
+
+
+def test_load_station_mapping_rejects_inconsistent_location_ids(tmp_path):
+    mapping_path = tmp_path / "mapping.csv"
+    invalid_mapping = {
+        "station_name": ["WARSZAWA", "WARSZAWA-OKĘCIE"],
+        "location": ["miasto", "miasto"],
+        "location_name": ["WARSZAWA", "WARSZAWA"],
+        "id": ["LOC001", "LOC002"],
+        "station_code": [352200375, 352200375],
+    }
+    pd.DataFrame(invalid_mapping).to_csv(mapping_path, index=False)
+
+    with pytest.raises(ValueError, match="one-to-one"):
         ReferenceDataLoader(Mock(), mapping_path).load_station_mapping()

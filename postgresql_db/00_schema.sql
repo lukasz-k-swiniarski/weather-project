@@ -354,28 +354,18 @@ CREATE VIEW layer_gold.synop_station_mapp_1 AS
          SELECT c.station_name,
             c.city,
             c.city_id
-           FROM (synop_daily s
+          FROM (synop_daily s
              LEFT JOIN synop_city c ON ((s.station_name = c.station_name)))
           WHERE (c.city_id IS NOT NULL)
-        ), city_mapp_2 AS (
-         SELECT c.station_name,
-            c.city,
-            c.city_id,
-            g.voivodeship,
-            g.county,
-            g.municipality,
-            g.geographical_coordinates
-           FROM (city_mapp_1 c
-             LEFT JOIN layer_silver.geography_city g ON ((c.city_id = g.id)))
         )
  SELECT station_name,
     city,
     city_id,
-    voivodeship,
-    county,
-    municipality,
-    geographical_coordinates
-   FROM city_mapp_2;
+    NULL::text AS voivodeship,
+    NULL::text AS county,
+    NULL::text AS municipality,
+    NULL::public.geography(Point,4326) AS geographical_coordinates
+   FROM city_mapp_1;
 
 
 ALTER VIEW layer_gold.synop_station_mapp_1 OWNER TO postgres;
