@@ -1,5 +1,6 @@
 import requests
-from html_parser import extract_links
+
+from etl_process.html_parser import extract_links
 
 
 class CrawlerService:
@@ -26,7 +27,8 @@ class CrawlerService:
 
         zip_links_dir, directory_links = extract_links(response.text, url)
 
-        if zip_links_dir.files: self.zip_files_dic[zip_links_dir.directory] = zip_links_dir
+        if zip_links_dir.files:
+            self.zip_files_dic[zip_links_dir.directory] = zip_links_dir
 
         for directory in directory_links:
             if directory not in self.visited:

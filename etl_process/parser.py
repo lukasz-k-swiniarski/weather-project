@@ -1,8 +1,9 @@
-import os
-import pandas as pd
 import logging
+import os
 
-from schema_loader import SchemaLoader
+import pandas as pd
+
+from etl_process.schema_loader import SchemaLoader
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,7 @@
-import requests
 import unicodedata
+
+import requests
+
 
 def remove_diacritics(text: str) -> str:
     normalized = unicodedata.normalize('NFKD', text)
@@ -7,7 +9,9 @@ def remove_diacritics(text: str) -> str:
 
 
 def load_column_mapping(url: str) -> dict:
-    text = requests.get(url).text
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+    text = response.text
 
     mapping = {}
     for line in text.splitlines():
