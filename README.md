@@ -1,5 +1,8 @@
 # IMGW Weather ETL
 
+Źródłem pochodzenia danych jest Instytut Meteorologii i Gospodarki Wodnej –
+Państwowy Instytut Badawczy
+
 Python ETL pipeline that downloads public daily meteorological data from
 [IMGW](https://danepubliczne.imgw.pl/), parses the source CSV files and loads them into a
 PostgreSQL/PostGIS warehouse organized into Bronze, Silver and Gold layers.
