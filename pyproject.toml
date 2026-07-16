@@ -19,6 +19,9 @@ dev = [
     "ruff==0.15.5",
 ]
 
+[tool.setuptools]
+packages = ["etl_process"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
