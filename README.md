@@ -113,32 +113,6 @@ The separate `layer_bronze.geography` reference dataset is not yet loaded by thi
 City names from the station mapping are therefore available, but administrative divisions and
 PostGIS coordinates require the geography table to be populated separately.
 
-### Station mapping data provenance
-
-`postgresql_db/synop_location_mapp.csv` is a project-specific reference mapping created by the
-project author. It combines IMGW meteorological station data with locality information matched
-against the Polish **Państwowy Rejestr Nazw Geograficznych (PRNG)**. It is not an unchanged
-official dataset published by either IMGW or GUGiK.
-
-Column provenance:
-
-- `station_name` and `station_code` come from public IMGW SYNOP meteorological datasets;
-- `location_name` is the locality name matched by the project author using PRNG data;
-- `id` is the PRNG identifier of the matched locality;
-- `location` is the PRNG locality type used in the mapping, for example `miasto` (town/city) or
-  `wieś` (village).
-
-The PRNG data used for this mapping was downloaded on 2026-04-26 from the official
-[Geoportal PRNG map](https://mapy.geoportal.gov.pl/imap/Imgp_2.html?locale=pl&gui=new&sessionID=5836773).
-Original source providers are **Instytut Meteorologii i Gospodarki Wodnej – Państwowy Instytut
-Badawczy (IMGW-PIB)** for station data and **Główny Urząd Geodezji i Kartografii (GUGiK)** for
-PRNG locality data.
-
-The source records were processed and matched by the project author. IMGW-PIB and GUGiK are not
-responsible for the correctness, completeness, quality or currency of this derived mapping. PRNG
-reuse is subject to the
-[GUGiK public-sector information reuse conditions](https://www.gov.pl/web/gugik/ponowne-wykorzystanie-informacji-sektora-publicznego).
-
 ## Security
 
 - `.env`, downloaded data, logs, virtual environments and IDE settings are ignored by Git;
