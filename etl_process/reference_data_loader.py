@@ -11,7 +11,7 @@ class ReferenceDataLoader:
         "id",
         "station_code",
     )
-    REQUIRED_VALUES = ("station_name", "location", "station_code")
+    REQUIRED_VALUES = REQUIRED_COLUMNS
 
     def __init__(
         self,
@@ -60,6 +60,17 @@ class ReferenceDataLoader:
         station_codes = pd.to_numeric(dataframe["station_code"], errors="coerce")
         if station_codes.isna().any():
             raise ValueError("Station mapping contains invalid station_code values")
+
+        inconsistent_ids = (
+            dataframe.groupby("location_name")["id"].nunique().gt(1).any()
+        )
+        inconsistent_names = (
+            dataframe.groupby("id")["location_name"].nunique().gt(1).any()
+        )
+        if inconsistent_ids or inconsistent_names:
+            raise ValueError(
+                "Station mapping must use a one-to-one location_name/id mapping"
+            )
 
         dataframe["station_code"] = station_codes.astype("int64")
         return dataframe

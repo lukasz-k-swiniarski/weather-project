@@ -105,13 +105,15 @@ mapping file is fully validated and replaces the contents of
 `layer_silver.synop_location_mapp` in a single database transaction. The warehouse refresh
 procedure runs only after the mapping and weather datasets have been loaded successfully.
 
-The mapping intentionally allows multiple station names for one station code and nullable city
-identifiers for locations such as mountain stations. The loader rejects missing station names,
-location types and station codes.
+The station mapping is a manually maintained, project-specific lookup intended only to support
+this application's data-processing workflow. Its `id` values are internal identifiers
+with no meaning outside this project, and its location names and types are project-defined labels,
+not an authoritative geographic register. The mapping may associate multiple station names with
+one location, while the loader enforces complete values and a one-to-one relationship between
+each `location_name` and `id`.
 
-The separate `layer_bronze.geography` reference dataset is not yet loaded by this repository.
-City names from the station mapping are therefore available, but administrative divisions and
-PostGIS coordinates require the geography table to be populated separately.
+Administrative divisions and geographic coordinates are outside the current scope. Their Gold
+layer fields remain nullable and are not populated from an external geographic dataset.
 
 ## Security
 
