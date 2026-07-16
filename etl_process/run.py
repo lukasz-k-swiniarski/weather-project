@@ -1,7 +1,7 @@
 import logging
 
-from etl_pipeline import ETLPipeline
-from logging_config import setup_logging
+from etl_process.etl_pipeline import ETLPipeline
+from etl_process.logging_config import setup_logging
 
 if __name__ == "__main__":
     setup_logging(log_file="etl.log")

@@ -47,36 +47,6 @@ CREATE SCHEMA layer_silver;
 ALTER SCHEMA layer_silver OWNER TO postgres;
 
 --
--- Name: pgagent; Type: SCHEMA; Schema: -; Owner: postgres
---
-
-CREATE SCHEMA pgagent;
-
-
-ALTER SCHEMA pgagent OWNER TO postgres;
-
---
--- Name: SCHEMA pgagent; Type: COMMENT; Schema: -; Owner: postgres
---
-
-COMMENT ON SCHEMA pgagent IS 'pgAgent system tables';
-
-
---
--- Name: pgagent; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS pgagent WITH SCHEMA pgagent;
-
-
---
--- Name: EXTENSION pgagent; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION pgagent IS 'A PostgreSQL job scheduler';
-
-
---
 -- Name: postgis; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -528,4 +498,3 @@ ALTER TABLE layer_gold.synop_data_gold OWNER TO postgres;
 --
 
 \unrestrict FZPrCSd43e0UJY5wVp7m56saHmz2hdBcinNGBxCUzsqx2jmodeZAKWb1PFo7CHo
-
