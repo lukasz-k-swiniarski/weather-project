@@ -1,18 +1,20 @@
 import logging
-from typing import Dict, List
 
-from crawler_service import CrawlerService
-from download_service import DownloadService
-from schema_loader import SchemaLoader
-from zip_extractor import ZipExtractor
-from parser import Parser
-from postgres_client import PostgresClient
-from config import (
-    get_db_config,
+from pandas import DataFrame
+
+from etl_process.config import (
+    PROJECT_DIR,
     get_dataset_config,
     get_dataset_schema_config,
+    get_db_config,
 )
-
+from etl_process.crawler_service import CrawlerService
+from etl_process.download_service import DownloadService
+from etl_process.parser import Parser
+from etl_process.postgres_client import PostgresClient
+from etl_process.reference_data_loader import ReferenceDataLoader
+from etl_process.schema_loader import SchemaLoader
+from etl_process.zip_extractor import ZipExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,10 @@ class ETLPipeline:
         self.extractor = ZipExtractor()
         self.schema_loader = SchemaLoader()
         self.parser = Parser(self.dataset_schema_config, self.schema_loader)
+        self.reference_loader = ReferenceDataLoader(
+            self.db,
+            PROJECT_DIR / "postgresql_db" / "synop_location_mapp.csv",
+        )
 
     def _init_db(self) -> PostgresClient:
         db_config = get_db_config()
@@ -36,7 +42,7 @@ class ETLPipeline:
         logger.info("Connected to database")
         return db
 
-    def _sort_schema_config(self) -> Dict:
+    def _sort_schema_config(self) -> dict:
         config = get_dataset_schema_config()
         sorted_config = dict(
             sorted(
@@ -51,6 +57,7 @@ class ETLPipeline:
         logger.info("ETL pipeline started")
 
         try:
+            self._load_reference_data()
             files = self._collect_files()
             dataframes = self._parse_files(files)
             self._load_to_db(dataframes)
@@ -62,7 +69,16 @@ class ETLPipeline:
             logger.exception("ETL pipeline failed")
             raise
 
-    def _collect_files(self) -> List[str]:
+        finally:
+            self.db.disconnect()
+            logger.info("Database connection closed")
+
+    def _load_reference_data(self) -> None:
+        logger.info("Loading station-to-location reference mapping")
+        row_count = self.reference_loader.load_station_mapping()
+        logger.info("Loaded %s station mapping rows", row_count)
+
+    def _collect_files(self) -> list[str]:
         logger.info("Starting crawl phase")
 
         all_files = []
@@ -90,13 +106,13 @@ class ETLPipeline:
         logger.info(f"Collected total files: {len(all_files)}")
         return all_files
 
-    def _parse_files(self, files: List[str]) -> Dict[str, "DataFrame"]:
+    def _parse_files(self, files: list[str]) -> dict[str, DataFrame]:
         logger.info("Parsing files into dataframes")
         dataframes = self.parser.parse(files)
         logger.info(f"Parsed {len(dataframes)} datasets")
         return dataframes
 
-    def _load_to_db(self, dataframes: Dict[str, "DataFrame"]):
+    def _load_to_db(self, dataframes: dict[str, DataFrame]):
         logger.info("Starting DB load phase")
 
         for key, df in dataframes.items():
@@ -112,6 +128,7 @@ class ETLPipeline:
 
             except Exception:
                 logger.exception(f"Failed loading dataset: {key}")
+                raise
 
     def _refresh_db(self):
         logger.info("Starting exec procedures...")

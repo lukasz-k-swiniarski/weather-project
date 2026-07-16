@@ -1,8 +1,27 @@
+# Secrets and local configuration
 .env
+.env.*
+!.env.example
+
+# Python
 .venv/
+venv/
 __pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
 .idea/
+.vscode/
+
+# Runtime output and downloaded data
 data/
 logs/
 tmp/
-etl.log
+*.log
+
+# Operating systems
+.DS_Store
+Thumbs.db

@@ -1,7 +1,7 @@
+import logging
 import os
 import zipfile
-import logging
-
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,8 @@ class ZipExtractor:
 
             os.makedirs(extract_path, exist_ok=True)
 
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            with zipfile.ZipFile(zip_path, "r") as zip_ref:
+                self._validate_members(zip_ref, extract_path)
                 zip_ref.extractall(extract_path)
 
             files = self._list_files(extract_path)
@@ -43,6 +44,15 @@ class ZipExtractor:
         except Exception as e:
             logger.error(f"Extraction failed: {e}")
             raise
+
+    @staticmethod
+    def _validate_members(zip_ref: zipfile.ZipFile, extract_path: str) -> None:
+        target_dir = Path(extract_path).resolve()
+
+        for member in zip_ref.infolist():
+            member_path = (target_dir / member.filename).resolve()
+            if target_dir != member_path and target_dir not in member_path.parents:
+                raise ValueError(f"Unsafe path in ZIP archive: {member.filename}")
 
     def _list_files(self, directory: str) -> list[str]:
         file_paths = []

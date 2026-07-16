@@ -1,6 +1,8 @@
-from models import FileLink, FileLinkDirectory
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+
+from bs4 import BeautifulSoup
+
+from etl_process.models import FileLink, FileLinkDirectory
 
 
 def extract_links(html: str, base_url: str):
@@ -22,7 +24,16 @@ def extract_links(html: str, base_url: str):
                 )
             )
 
-        elif href.endswith("/") and not href.startswith("../") and not len(full_url) < len(base_url):
+        elif (
+            href.endswith("/")
+            and not href.startswith("../")
+            and len(full_url) >= len(base_url)
+        ):
             directory_links.append(full_url)
 
-    return FileLinkDirectory(files=zip_links,directory_url=base_url, directory=base_url.split("/")[-2]), directory_links
+    directory = FileLinkDirectory(
+        files=zip_links,
+        directory_url=base_url,
+        directory=base_url.split("/")[-2],
+    )
+    return directory, directory_links

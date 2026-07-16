@@ -1,6 +1,7 @@
-from sqlalchemy import create_engine, text
-import pandas as pd
 import logging
+
+import pandas as pd
+from sqlalchemy import URL, create_engine, text
 
 logger = logging.getLogger(__name__)
 
@@ -10,18 +11,22 @@ class PostgresClient:
         self.schema = schema
         self.if_exists = if_exists
         self.chunksize = chunksize
-        self.connection_string = (
-            f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}"
+        self.connection_url = URL.create(
+            drivername="postgresql+psycopg2",
+            username=user,
+            password=password,
+            host=host,
+            port=port,
+            database=dbname,
         )
         self.engine = None
 
     def connect(self):
-        logger.info('connecting to PostgreSQL database')
-        try:
-            self.engine = create_engine(self.connection_string)
-            logger.info('successfully connected to PostgreSQL database')
-        except Exception as e:
-            logger.debug(e)
+        logger.info("Connecting to PostgreSQL database")
+        self.engine = create_engine(self.connection_url, pool_pre_ping=True)
+        with self.engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        logger.info("Successfully connected to PostgreSQL database")
 
     def disconnect(self):
         if self.engine:
@@ -43,10 +48,35 @@ class PostgresClient:
             method="multi"  # batch insert
         )
 
+    def replace_table_data(
+        self,
+        df: pd.DataFrame,
+        table_name: str,
+        schema: str | None = None,
+    ) -> None:
+        if self.engine is None:
+            raise RuntimeError("Database connection has not been initialized")
+
+        target_schema = schema or self.schema
+        with self.engine.begin() as connection:
+            connection.execute(text(f'DELETE FROM "{target_schema}"."{table_name}"'))
+            df.to_sql(
+                name=table_name,
+                con=connection,
+                schema=target_schema,
+                if_exists="append",
+                index=False,
+                chunksize=self.chunksize,
+                method="multi",
+            )
+
     def exec_procedure(
         self,
         proc_name: str
     ):
+        if self.engine is None:
+            raise RuntimeError("Database connection has not been initialized")
+
         with self.engine.connect() as conn:
             conn.execute(text(f'CALL {self.schema}.{proc_name}()'))
             conn.commit()
