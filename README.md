@@ -7,15 +7,6 @@ Python ETL pipeline that downloads public daily meteorological data from
 [IMGW](https://danepubliczne.imgw.pl/), parses the source CSV files and loads them into a
 PostgreSQL/PostGIS warehouse organized into Bronze, Silver and Gold layers.
 
-## What this project demonstrates
-
-- recursive discovery and idempotent downloading of public datasets;
-- ZIP extraction and schema-driven CSV parsing;
-- configuration through YAML and environment variables;
-- batch loading with Pandas and SQLAlchemy;
-- PostgreSQL procedures and Bronze/Silver/Gold data modelling;
-- automated tests, linting and CI.
-
 ## Architecture
 
 ```text
