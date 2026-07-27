@@ -16,7 +16,6 @@ IMGW website
     -> Pandas parsing
     -> PostgreSQL layer_bronze
 station mapping CSV
-    -> validation and transactional load to layer_silver.synop_location_mapp
     -> SQL procedures
     -> layer_silver
     -> layer_gold
