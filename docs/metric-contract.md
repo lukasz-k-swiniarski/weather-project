@@ -39,6 +39,16 @@ are non-null. A row count cannot substitute for measure-specific completeness.
 Annual metric columns are set to `NULL` when their contract is not met. This makes an incomplete
 annual result unavailable by default instead of relying on a hidden report filter.
 
+Power BI coverage measures are weighted by the expected station-day denominator:
+
+```text
+coverage = sum(observed measure days) / sum(expected days)
+```
+
+The temperature reporting rate uses complete station-years as its denominator. A partial current
+year is therefore visible for coverage monitoring without being classified as a reporting
+failure.
+
 ## Metric definitions
 
 | Metric | Station-year formula | Eligibility |

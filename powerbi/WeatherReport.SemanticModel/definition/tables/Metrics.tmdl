@@ -91,17 +91,25 @@ table Metrics
 		displayFolder: Data Quality
 		lineageTag: 6b83197a-72ea-4694-aa7f-a023c7c44958
 
-	measure 'Temperature Reporting Rate' = DIVIDE([Temperature Reportable Station-Years], [Station-Year Records])
+	measure 'Temperature Reporting Rate' = DIVIDE([Temperature Reportable Station-Years], [Complete Station-Years])
 		formatString: 0.0%
 		displayFolder: Data Quality
 		lineageTag: 8139390f-5eb3-4d64-b0e1-d8fc178e05a9
 
-	measure 'Average Temperature Coverage' = AVERAGE('Station Year Weather'[avg_temperature_coverage])
+	measure 'Average Temperature Coverage' =
+			DIVIDE(
+			    SUM('Station Year Weather'[avg_temperature_days]),
+			    SUM('Station Year Weather'[expected_days])
+			)
 		formatString: 0.0%
 		displayFolder: Data Quality
 		lineageTag: 352fda82-89ca-48ad-a83f-fa4e4d9d9a6d
 
-	measure 'Average Precipitation Coverage' = AVERAGE('Station Year Weather'[precipitation_coverage])
+	measure 'Average Precipitation Coverage' =
+			DIVIDE(
+			    SUM('Station Year Weather'[precipitation_days]),
+			    SUM('Station Year Weather'[expected_days])
+			)
 		formatString: 0.0%
 		displayFolder: Data Quality
 		lineageTag: a1b750bc-5de9-48c8-83c3-f79c72052a2d

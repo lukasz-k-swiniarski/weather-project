@@ -1,5 +1,6 @@
 table 'Station Year Weather'
 	lineageTag: a52feb34-4de0-437b-802c-11a4e2189ac3
+	isHidden
 
 	column station_key
 		dataType: int64
