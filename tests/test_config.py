@@ -29,6 +29,7 @@ def test_db_config_reads_required_environment(monkeypatch):
     assert config["port"] == 5432
     assert config["schema"] == "layer_bronze"
     assert "password" in config
+    assert "if_exists" not in config
 
 
 def test_db_config_reports_missing_values(monkeypatch):

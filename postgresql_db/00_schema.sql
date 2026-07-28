@@ -1,490 +1,553 @@
---
--- PostgreSQL database dump
---
-
-\restrict FZPrCSd43e0UJY5wVp7m56saHmz2hdBcinNGBxCUzsqx2jmodeZAKWb1PFo7CHo
-
--- Dumped from database version 17.6
--- Dumped by pg_dump version 17.6
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Name: layer_bronze; Type: SCHEMA; Schema: -; Owner: postgres
---
+-- IMGW Weather ETL warehouse baseline schema.
+-- This file is executed automatically only when the Docker database volume is created.
 
 CREATE SCHEMA layer_bronze;
-
-
-ALTER SCHEMA layer_bronze OWNER TO postgres;
-
---
--- Name: layer_gold; Type: SCHEMA; Schema: -; Owner: postgres
---
-
+CREATE SCHEMA layer_silver;
 CREATE SCHEMA layer_gold;
 
-
-ALTER SCHEMA layer_gold OWNER TO postgres;
-
---
--- Name: layer_silver; Type: SCHEMA; Schema: -; Owner: postgres
---
-
-CREATE SCHEMA layer_silver;
-
-
-ALTER SCHEMA layer_silver OWNER TO postgres;
-
---
--- Name: postgis; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
-
-
---
--- Name: EXTENSION postgis; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION postgis IS 'PostGIS geometry and geography spatial types and functions';
-
-
---
--- Name: refresh_etl(); Type: PROCEDURE; Schema: layer_bronze; Owner: postgres
---
-
-CREATE PROCEDURE layer_bronze.refresh_etl()
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-
-	CALL layer_silver.refresh();
-	CALL layer_gold.refresh();
-	
-END;
-$$;
-
-
-ALTER PROCEDURE layer_bronze.refresh_etl() OWNER TO postgres;
-
---
--- Name: refresh(); Type: PROCEDURE; Schema: layer_gold; Owner: postgres
---
-
-CREATE PROCEDURE layer_gold.refresh()
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-
-	-- CREATE GOLDEN SOURCE TABLE
-	DROP TABLE IF EXISTS layer_gold.synop_data_gold;
-	CREATE TABLE layer_gold.synop_data_gold
-	AS 
-	SELECT * FROM layer_gold.daily_synop_data;
-
-END;
-$$;
-
-
-ALTER PROCEDURE layer_gold.refresh() OWNER TO postgres;
-
---
--- Name: refresh(); Type: PROCEDURE; Schema: layer_silver; Owner: postgres
---
-
-CREATE PROCEDURE layer_silver.refresh()
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-
-	-- REFRESH TABLE WITH CITIES
-    TRUNCATE TABLE layer_silver.geography_city;
-    INSERT INTO layer_silver.geography_city
-    SELECT *
-    FROM layer_bronze.geography
-    WHERE name_type = 'urzędowa'
-      AND place_category = 'miejscowość'
-      AND place_type = 'miasto';
-	---------------------------------------------
-
-	-- CREATE TABLE FOR SYNOP DATA ANALYSIS
-	TRUNCATE TABLE layer_silver.synop_daily;
-	INSERT INTO layer_silver.synop_daily
-	SELECT
-		nsp as station_code,
-		TRIM(post) as station_name,
-		rok as year,
-		mc as month,
-		dz as day,
-		tmax as max_daily_t,
-		tmin as min_daily_t,
-		std as avg_daily_t,
-		smdb as daily_precip,
-		roop as precip_type,
-		pksn as snow_deph_cm,
-		desz as time_of_rain_h,
-		sneg as time_if_snow_h,
-		disn as time_of_sleet_h,
-		dzps as snow_cover_occur
-	FROM layer_bronze.synop_s_d_imgw;
-	--
-
-END;
-$$;
-
-
-ALTER PROCEDURE layer_silver.refresh() OWNER TO postgres;
-
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
-
---
--- Name: geography; Type: TABLE; Schema: layer_bronze; Owner: postgres
---
-
-CREATE TABLE layer_bronze.geography (
-    id text,
-    name text,
-    name_type text,
-    place_category text,
-    place_type text,
-    voivodeship text,
-    county text,
-    municipality text,
-    geographical_coordinates public.geography(Point,4326)
-);
-
-
-ALTER TABLE layer_bronze.geography OWNER TO postgres;
-
---
--- Name: synop_s_d_imgw; Type: TABLE; Schema: layer_bronze; Owner: postgres
---
-
+-- Bronze preserves the source fields and IMGW measurement statuses.
 CREATE TABLE layer_bronze.synop_s_d_imgw (
     nsp bigint,
     post text,
-    rok bigint,
-    mc bigint,
-    dz bigint,
+    rok smallint,
+    mc smallint,
+    dz smallint,
     tmax double precision,
-    wtmax double precision,
+    wtmax smallint,
     tmin double precision,
-    wtmin double precision,
+    wtmin smallint,
     std double precision,
-    wstd double precision,
+    wstd smallint,
     tmng double precision,
-    wtmng double precision,
+    wtmng smallint,
     smdb double precision,
-    wsmdb double precision,
+    wsmdb smallint,
     roop text,
     pksn double precision,
-    wpksn double precision,
+    wpksn smallint,
     rwsn double precision,
-    wrwsn double precision,
+    wrwsn smallint,
     usl double precision,
-    wusl double precision,
+    wusl smallint,
     desz double precision,
-    wdesz double precision,
+    wdesz smallint,
     sneg double precision,
-    wsneg double precision,
+    wsneg smallint,
     disn double precision,
-    wdisn double precision,
+    wdisn smallint,
     grad double precision,
-    wgrad double precision,
+    wgrad smallint,
     mgla double precision,
-    wmgla double precision,
+    wmgla smallint,
     zmgl double precision,
-    wzmgl double precision,
+    wzmgl smallint,
     sadz double precision,
-    wsadz double precision,
+    wsadz smallint,
     golo double precision,
-    wgolo double precision,
+    wgolo smallint,
     zmni double precision,
-    wzmni double precision,
+    wzmni smallint,
     zmws double precision,
-    wzmws double precision,
+    wzmws smallint,
     zmet double precision,
-    wzmet double precision,
+    wzmet smallint,
     ff10 double precision,
-    wff10 double precision,
+    wff10 smallint,
     ff15 double precision,
-    wff15 double precision,
+    wff15 smallint,
     brza double precision,
-    wbrza double precision,
+    wbrza smallint,
     rosa double precision,
-    wrosa double precision,
+    wrosa smallint,
     szro double precision,
-    wszro double precision,
-    dzps double precision,
-    wdzps double precision,
-    dzbl double precision,
-    wdzbl double precision,
+    wszro smallint,
+    dzps smallint,
+    wdzps smallint,
+    dzbl smallint,
+    wdzbl smallint,
     sgr text,
     izd double precision,
-    wizd double precision,
+    wizd smallint,
     izg double precision,
-    wizg double precision,
+    wizg smallint,
     aktn double precision,
-    waktn double precision
+    waktn smallint
 );
-
-
-ALTER TABLE layer_bronze.synop_s_d_imgw OWNER TO postgres;
-
---
--- Name: synop_s_d_t_imgw; Type: TABLE; Schema: layer_bronze; Owner: postgres
---
 
 CREATE TABLE layer_bronze.synop_s_d_t_imgw (
     nsp bigint,
     post text,
-    rok bigint,
-    mc bigint,
-    dz bigint,
+    rok smallint,
+    mc smallint,
+    dz smallint,
     nos double precision,
-    wnos double precision,
+    wnos smallint,
     fws double precision,
-    wfws double precision,
+    wfws smallint,
     temp double precision,
-    wtemp double precision,
+    wtemp smallint,
     cpw double precision,
-    wcpw double precision,
+    wcpw smallint,
     wlgs double precision,
-    wwlgs double precision,
+    wwlgs smallint,
     ppps double precision,
-    wppps double precision,
+    wppps smallint,
     pppm double precision,
-    wpppm double precision,
+    wpppm smallint,
     wodz double precision,
-    wwodz double precision,
+    wwodz smallint,
     wono double precision,
-    wwono double precision
+    wwono smallint
 );
 
+CREATE DOMAIN layer_silver.measurement_status AS smallint
+    CHECK (VALUE IS NULL OR VALUE IN (8, 9));
 
-ALTER TABLE layer_bronze.synop_s_d_t_imgw OWNER TO postgres;
-
---
--- Name: geography_city; Type: TABLE; Schema: layer_silver; Owner: postgres
---
-
-CREATE TABLE layer_silver.geography_city (
-    id text,
-    name text,
-    name_type text,
-    place_category text,
-    place_type text,
-    voivodeship text,
-    county text,
-    municipality text,
-    geographical_coordinates public.geography(Point,4326)
-);
-
-
-ALTER TABLE layer_silver.geography_city OWNER TO postgres;
-
---
--- Name: synop_daily; Type: TABLE; Schema: layer_silver; Owner: postgres
---
-
-CREATE TABLE layer_silver.synop_daily (
-    station_code bigint,
-    station_name text,
-    year bigint,
-    month bigint,
-    day bigint,
-    max_daily_t double precision,
-    min_daily_t double precision,
-    avg_daily_t double precision,
-    daily_precip double precision,
-    precip_type text,
-    snow_deph_cm double precision,
-    time_of_rain_h double precision,
-    time_if_snow_h double precision,
-    time_of_sleet_h double precision,
-    snow_cover_occur double precision
-);
-
-
-ALTER TABLE layer_silver.synop_daily OWNER TO postgres;
-
---
--- Name: synop_location_mapp; Type: TABLE; Schema: layer_silver; Owner: postgres
---
-
+-- Project-owned station reference data. Geographic enrichment is added in a later package.
 CREATE TABLE layer_silver.synop_location_mapp (
-    station_name text,
-    location text,
+    station_name text NOT NULL,
+    location text NOT NULL,
+    location_name text NOT NULL,
+    id text NOT NULL,
+    station_code bigint NOT NULL,
+    CONSTRAINT synop_location_mapp_station_name_uk UNIQUE (station_name)
+);
+
+CREATE INDEX synop_location_mapp_station_code_idx
+    ON layer_silver.synop_location_mapp (station_code);
+
+-- One row per IMGW station and observation day.
+CREATE TABLE layer_silver.weather_daily (
+    station_code bigint NOT NULL,
+    station_name text NOT NULL,
+    observation_date date NOT NULL,
+    max_air_temperature_c double precision,
+    max_air_temperature_status layer_silver.measurement_status,
+    min_air_temperature_c double precision,
+    min_air_temperature_status layer_silver.measurement_status,
+    avg_air_temperature_c double precision,
+    avg_air_temperature_status layer_silver.measurement_status,
+    min_ground_temperature_c double precision,
+    min_ground_temperature_status layer_silver.measurement_status,
+    precipitation_total_mm double precision,
+    precipitation_total_status layer_silver.measurement_status,
+    precipitation_type text,
+    snow_depth_cm double precision,
+    snow_depth_status layer_silver.measurement_status,
+    snow_water_equivalent_mm_cm double precision,
+    snow_water_equivalent_status layer_silver.measurement_status,
+    sunshine_duration_h double precision,
+    sunshine_duration_status layer_silver.measurement_status,
+    rain_duration_h double precision,
+    rain_duration_status layer_silver.measurement_status,
+    snowfall_duration_h double precision,
+    snowfall_duration_status layer_silver.measurement_status,
+    sleet_duration_h double precision,
+    sleet_duration_status layer_silver.measurement_status,
+    hail_duration_h double precision,
+    hail_duration_status layer_silver.measurement_status,
+    fog_duration_h double precision,
+    fog_duration_status layer_silver.measurement_status,
+    mist_duration_h double precision,
+    mist_duration_status layer_silver.measurement_status,
+    rime_duration_h double precision,
+    rime_duration_status layer_silver.measurement_status,
+    glaze_duration_h double precision,
+    glaze_duration_status layer_silver.measurement_status,
+    low_drifting_snow_duration_h double precision,
+    low_drifting_snow_status layer_silver.measurement_status,
+    high_drifting_snow_duration_h double precision,
+    high_drifting_snow_status layer_silver.measurement_status,
+    haze_duration_h double precision,
+    haze_duration_status layer_silver.measurement_status,
+    wind_ge_10_m_s_duration_h double precision,
+    wind_ge_10_m_s_status layer_silver.measurement_status,
+    wind_gt_15_m_s_duration_h double precision,
+    wind_gt_15_m_s_status layer_silver.measurement_status,
+    thunderstorm_duration_h double precision,
+    thunderstorm_duration_status layer_silver.measurement_status,
+    dew_duration_h double precision,
+    dew_duration_status layer_silver.measurement_status,
+    frost_duration_h double precision,
+    frost_duration_status layer_silver.measurement_status,
+    snow_cover_occurred boolean,
+    snow_cover_occurrence_status layer_silver.measurement_status,
+    lightning_occurred boolean,
+    lightning_occurrence_status layer_silver.measurement_status,
+    ground_condition text,
+    lower_isotherm_cm double precision,
+    lower_isotherm_status layer_silver.measurement_status,
+    upper_isotherm_cm double precision,
+    upper_isotherm_status layer_silver.measurement_status,
+    actinometry_j_cm2 double precision,
+    actinometry_status layer_silver.measurement_status,
+    avg_cloud_cover_oktas double precision,
+    avg_cloud_cover_status layer_silver.measurement_status,
+    avg_wind_speed_m_s double precision,
+    avg_wind_speed_status layer_silver.measurement_status,
+    secondary_avg_air_temperature_c double precision,
+    secondary_avg_air_temperature_status layer_silver.measurement_status,
+    avg_vapour_pressure_hpa double precision,
+    avg_vapour_pressure_status layer_silver.measurement_status,
+    avg_relative_humidity_pct double precision,
+    avg_relative_humidity_status layer_silver.measurement_status,
+    avg_station_pressure_hpa double precision,
+    avg_station_pressure_status layer_silver.measurement_status,
+    avg_sea_level_pressure_hpa double precision,
+    avg_sea_level_pressure_status layer_silver.measurement_status,
+    daytime_precipitation_mm double precision,
+    daytime_precipitation_status layer_silver.measurement_status,
+    nighttime_precipitation_mm double precision,
+    nighttime_precipitation_status layer_silver.measurement_status,
+    CONSTRAINT weather_daily_pk PRIMARY KEY (station_code, observation_date)
+);
+
+CREATE INDEX weather_daily_observation_date_idx
+    ON layer_silver.weather_daily (observation_date);
+
+-- Conformed date dimension for Power BI.
+CREATE TABLE layer_gold.dim_date (
+    date_key integer PRIMARY KEY,
+    full_date date NOT NULL UNIQUE,
+    year smallint NOT NULL,
+    quarter smallint NOT NULL,
+    month smallint NOT NULL,
+    month_name text NOT NULL,
+    day smallint NOT NULL,
+    day_of_year smallint NOT NULL,
+    days_in_year smallint NOT NULL,
+    is_leap_year boolean NOT NULL
+);
+
+-- One row per IMGW station code. Administrative and coordinate fields are enriched later.
+CREATE TABLE layer_gold.dim_station (
+    station_key bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    station_code bigint NOT NULL UNIQUE,
+    station_name text NOT NULL,
+    location_id text,
     location_name text,
-    id text,
-    station_code bigint
-);
-
-
-ALTER TABLE layer_silver.synop_location_mapp OWNER TO postgres;
-
---
--- Name: synop_station_mapp_1; Type: VIEW; Schema: layer_gold; Owner: postgres
---
-
-CREATE VIEW layer_gold.synop_station_mapp_1 AS
- WITH synop_city AS (
-         SELECT DISTINCT synop_location_mapp.station_name,
-            synop_location_mapp.location_name AS city,
-            synop_location_mapp.id AS city_id
-           FROM layer_silver.synop_location_mapp
-          WHERE (synop_location_mapp.location = 'miasto'::text)
-        ), synop_daily AS (
-         SELECT DISTINCT synop_daily.station_name
-           FROM layer_silver.synop_daily
-        ), city_mapp_1 AS (
-         SELECT c.station_name,
-            c.city,
-            c.city_id
-          FROM (synop_daily s
-             LEFT JOIN synop_city c ON ((s.station_name = c.station_name)))
-          WHERE (c.city_id IS NOT NULL)
-        )
- SELECT station_name,
-    city,
-    city_id,
-    NULL::text AS voivodeship,
-    NULL::text AS county,
-    NULL::text AS municipality,
-    NULL::public.geography(Point,4326) AS geographical_coordinates
-   FROM city_mapp_1;
-
-
-ALTER VIEW layer_gold.synop_station_mapp_1 OWNER TO postgres;
-
---
--- Name: daily_synop_data; Type: VIEW; Schema: layer_gold; Owner: postgres
---
-
-CREATE VIEW layer_gold.daily_synop_data AS
- WITH synop_daily AS (
-         SELECT synop_daily.station_code,
-            synop_daily.station_name,
-            synop_daily.year,
-            synop_daily.month,
-            synop_daily.day,
-            synop_daily.max_daily_t,
-            synop_daily.min_daily_t,
-            synop_daily.avg_daily_t,
-            synop_daily.daily_precip,
-            synop_daily.precip_type,
-            synop_daily.snow_deph_cm,
-            synop_daily.time_of_rain_h,
-            synop_daily.time_if_snow_h,
-            synop_daily.time_of_sleet_h,
-            synop_daily.snow_cover_occur
-           FROM layer_silver.synop_daily
-        ), mapp AS (
-         SELECT synop_station_mapp_1.station_name,
-            synop_station_mapp_1.city,
-            synop_station_mapp_1.city_id,
-            synop_station_mapp_1.voivodeship,
-            synop_station_mapp_1.county,
-            synop_station_mapp_1.municipality,
-            synop_station_mapp_1.geographical_coordinates
-           FROM layer_gold.synop_station_mapp_1
-        ), synop_mapped AS (
-         SELECT main.station_code,
-            main.station_name,
-            main.year,
-            main.month,
-            main.day,
-            main.max_daily_t,
-            main.min_daily_t,
-            main.avg_daily_t,
-            main.daily_precip,
-            main.precip_type,
-            main.snow_deph_cm,
-            main.time_of_rain_h,
-            main.time_if_snow_h,
-            main.time_of_sleet_h,
-            main.snow_cover_occur,
-            mapp.city,
-            mapp.city_id,
-            mapp.voivodeship,
-            mapp.county,
-            mapp.municipality,
-            mapp.geographical_coordinates
-           FROM (synop_daily main
-             LEFT JOIN mapp ON ((main.station_name = mapp.station_name)))
-        )
- SELECT station_code,
-    station_name,
-    year,
-    month,
-    day,
-    max_daily_t,
-    min_daily_t,
-    avg_daily_t,
-    daily_precip,
-    precip_type,
-    snow_deph_cm,
-    time_of_rain_h,
-    time_if_snow_h,
-    time_of_sleet_h,
-    snow_cover_occur,
-    city,
-    city_id,
-    voivodeship,
-    county,
-    municipality,
-    geographical_coordinates
-   FROM synop_mapped;
-
-
-ALTER VIEW layer_gold.daily_synop_data OWNER TO postgres;
-
---
--- Name: synop_data_gold; Type: TABLE; Schema: layer_gold; Owner: postgres
---
-
-CREATE TABLE layer_gold.synop_data_gold (
-    station_code bigint,
-    station_name text,
-    year bigint,
-    month bigint,
-    day bigint,
-    max_daily_t double precision,
-    min_daily_t double precision,
-    avg_daily_t double precision,
-    daily_precip double precision,
-    precip_type text,
-    snow_deph_cm double precision,
-    time_of_rain_h double precision,
-    time_if_snow_h double precision,
-    time_of_sleet_h double precision,
-    snow_cover_occur double precision,
-    city text,
-    city_id text,
+    location_type text,
     voivodeship text,
-    county text,
-    municipality text,
-    geographical_coordinates public.geography(Point,4326)
+    latitude double precision,
+    longitude double precision,
+    elevation_m double precision
 );
 
+-- One row per station and observation day. Descriptive attributes live in dimensions.
+CREATE TABLE layer_gold.fact_weather_daily (
+    date_key integer NOT NULL,
+    station_key bigint NOT NULL,
+    max_air_temperature_c double precision,
+    min_air_temperature_c double precision,
+    avg_air_temperature_c double precision,
+    min_ground_temperature_c double precision,
+    precipitation_total_mm double precision,
+    precipitation_type text,
+    snow_depth_cm double precision,
+    snow_water_equivalent_mm_cm double precision,
+    sunshine_duration_h double precision,
+    rain_duration_h double precision,
+    snowfall_duration_h double precision,
+    sleet_duration_h double precision,
+    hail_duration_h double precision,
+    fog_duration_h double precision,
+    mist_duration_h double precision,
+    rime_duration_h double precision,
+    glaze_duration_h double precision,
+    low_drifting_snow_duration_h double precision,
+    high_drifting_snow_duration_h double precision,
+    haze_duration_h double precision,
+    wind_ge_10_m_s_duration_h double precision,
+    wind_gt_15_m_s_duration_h double precision,
+    thunderstorm_duration_h double precision,
+    dew_duration_h double precision,
+    frost_duration_h double precision,
+    snow_cover_occurred boolean,
+    lightning_occurred boolean,
+    ground_condition text,
+    lower_isotherm_cm double precision,
+    upper_isotherm_cm double precision,
+    actinometry_j_cm2 double precision,
+    avg_cloud_cover_oktas double precision,
+    avg_wind_speed_m_s double precision,
+    avg_vapour_pressure_hpa double precision,
+    avg_relative_humidity_pct double precision,
+    avg_station_pressure_hpa double precision,
+    avg_sea_level_pressure_hpa double precision,
+    daytime_precipitation_mm double precision,
+    nighttime_precipitation_mm double precision,
+    CONSTRAINT fact_weather_daily_pk PRIMARY KEY (date_key, station_key),
+    CONSTRAINT fact_weather_daily_date_fk
+        FOREIGN KEY (date_key) REFERENCES layer_gold.dim_date (date_key),
+    CONSTRAINT fact_weather_daily_station_fk
+        FOREIGN KEY (station_key) REFERENCES layer_gold.dim_station (station_key)
+);
 
-ALTER TABLE layer_gold.synop_data_gold OWNER TO postgres;
+CREATE INDEX fact_weather_daily_station_date_idx
+    ON layer_gold.fact_weather_daily (station_key, date_key);
 
---
--- PostgreSQL database dump complete
---
+CREATE PROCEDURE layer_silver.refresh()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    TRUNCATE TABLE layer_silver.weather_daily;
 
-\unrestrict FZPrCSd43e0UJY5wVp7m56saHmz2hdBcinNGBxCUzsqx2jmodeZAKWb1PFo7CHo
+    INSERT INTO layer_silver.weather_daily (
+        station_code, station_name, observation_date,
+        max_air_temperature_c, max_air_temperature_status,
+        min_air_temperature_c, min_air_temperature_status,
+        avg_air_temperature_c, avg_air_temperature_status,
+        min_ground_temperature_c, min_ground_temperature_status,
+        precipitation_total_mm, precipitation_total_status, precipitation_type,
+        snow_depth_cm, snow_depth_status,
+        snow_water_equivalent_mm_cm, snow_water_equivalent_status,
+        sunshine_duration_h, sunshine_duration_status,
+        rain_duration_h, rain_duration_status,
+        snowfall_duration_h, snowfall_duration_status,
+        sleet_duration_h, sleet_duration_status,
+        hail_duration_h, hail_duration_status,
+        fog_duration_h, fog_duration_status,
+        mist_duration_h, mist_duration_status,
+        rime_duration_h, rime_duration_status,
+        glaze_duration_h, glaze_duration_status,
+        low_drifting_snow_duration_h, low_drifting_snow_status,
+        high_drifting_snow_duration_h, high_drifting_snow_status,
+        haze_duration_h, haze_duration_status,
+        wind_ge_10_m_s_duration_h, wind_ge_10_m_s_status,
+        wind_gt_15_m_s_duration_h, wind_gt_15_m_s_status,
+        thunderstorm_duration_h, thunderstorm_duration_status,
+        dew_duration_h, dew_duration_status,
+        frost_duration_h, frost_duration_status,
+        snow_cover_occurred, snow_cover_occurrence_status,
+        lightning_occurred, lightning_occurrence_status,
+        ground_condition,
+        lower_isotherm_cm, lower_isotherm_status,
+        upper_isotherm_cm, upper_isotherm_status,
+        actinometry_j_cm2, actinometry_status,
+        avg_cloud_cover_oktas, avg_cloud_cover_status,
+        avg_wind_speed_m_s, avg_wind_speed_status,
+        secondary_avg_air_temperature_c, secondary_avg_air_temperature_status,
+        avg_vapour_pressure_hpa, avg_vapour_pressure_status,
+        avg_relative_humidity_pct, avg_relative_humidity_status,
+        avg_station_pressure_hpa, avg_station_pressure_status,
+        avg_sea_level_pressure_hpa, avg_sea_level_pressure_status,
+        daytime_precipitation_mm, daytime_precipitation_status,
+        nighttime_precipitation_mm, nighttime_precipitation_status
+    )
+    SELECT
+        source.nsp,
+        trim(source.post),
+        make_date(source.rok, source.mc, source.dz),
+        CASE WHEN source.wtmax = 8 THEN NULL ELSE source.tmax END, source.wtmax,
+        CASE WHEN source.wtmin = 8 THEN NULL ELSE source.tmin END, source.wtmin,
+        CASE WHEN source.wstd = 8 THEN NULL ELSE source.std END, source.wstd,
+        CASE WHEN source.wtmng = 8 THEN NULL ELSE source.tmng END, source.wtmng,
+        CASE WHEN source.wsmdb = 8 THEN NULL ELSE source.smdb END, source.wsmdb,
+        nullif(trim(source.roop), ''),
+        CASE WHEN source.wpksn = 8 THEN NULL ELSE source.pksn END, source.wpksn,
+        CASE WHEN source.wrwsn = 8 THEN NULL ELSE source.rwsn END, source.wrwsn,
+        CASE WHEN source.wusl = 8 THEN NULL ELSE source.usl END, source.wusl,
+        CASE WHEN source.wdesz = 8 THEN NULL ELSE source.desz END, source.wdesz,
+        CASE WHEN source.wsneg = 8 THEN NULL ELSE source.sneg END, source.wsneg,
+        CASE WHEN source.wdisn = 8 THEN NULL ELSE source.disn END, source.wdisn,
+        CASE WHEN source.wgrad = 8 THEN NULL ELSE source.grad END, source.wgrad,
+        CASE WHEN source.wmgla = 8 THEN NULL ELSE source.mgla END, source.wmgla,
+        CASE WHEN source.wzmgl = 8 THEN NULL ELSE source.zmgl END, source.wzmgl,
+        CASE WHEN source.wsadz = 8 THEN NULL ELSE source.sadz END, source.wsadz,
+        CASE WHEN source.wgolo = 8 THEN NULL ELSE source.golo END, source.wgolo,
+        CASE WHEN source.wzmni = 8 THEN NULL ELSE source.zmni END, source.wzmni,
+        CASE WHEN source.wzmws = 8 THEN NULL ELSE source.zmws END, source.wzmws,
+        CASE WHEN source.wzmet = 8 THEN NULL ELSE source.zmet END, source.wzmet,
+        CASE WHEN source.wff10 = 8 THEN NULL ELSE source.ff10 END, source.wff10,
+        CASE WHEN source.wff15 = 8 THEN NULL ELSE source.ff15 END, source.wff15,
+        CASE WHEN source.wbrza = 8 THEN NULL ELSE source.brza END, source.wbrza,
+        CASE WHEN source.wrosa = 8 THEN NULL ELSE source.rosa END, source.wrosa,
+        CASE WHEN source.wszro = 8 THEN NULL ELSE source.szro END, source.wszro,
+        CASE
+            WHEN source.wdzps = 8 OR source.dzps NOT IN (0, 1) THEN NULL
+            ELSE source.dzps = 1
+        END,
+        source.wdzps,
+        CASE
+            WHEN source.wdzbl = 8 OR source.dzbl NOT IN (0, 1) THEN NULL
+            ELSE source.dzbl = 1
+        END,
+        source.wdzbl,
+        nullif(trim(source.sgr), ''),
+        CASE WHEN source.wizd = 8 THEN NULL ELSE source.izd END, source.wizd,
+        CASE WHEN source.wizg = 8 THEN NULL ELSE source.izg END, source.wizg,
+        CASE WHEN source.waktn = 8 THEN NULL ELSE source.aktn END, source.waktn,
+        CASE WHEN secondary.wnos = 8 THEN NULL ELSE secondary.nos END, secondary.wnos,
+        CASE WHEN secondary.wfws = 8 THEN NULL ELSE secondary.fws END, secondary.wfws,
+        CASE WHEN secondary.wtemp = 8 THEN NULL ELSE secondary.temp END, secondary.wtemp,
+        CASE WHEN secondary.wcpw = 8 THEN NULL ELSE secondary.cpw END, secondary.wcpw,
+        CASE WHEN secondary.wwlgs = 8 THEN NULL ELSE secondary.wlgs END, secondary.wwlgs,
+        CASE WHEN secondary.wppps = 8 THEN NULL ELSE secondary.ppps END, secondary.wppps,
+        CASE WHEN secondary.wpppm = 8 THEN NULL ELSE secondary.pppm END, secondary.wpppm,
+        CASE WHEN secondary.wwodz = 8 THEN NULL ELSE secondary.wodz END, secondary.wwodz,
+        CASE WHEN secondary.wwono = 8 THEN NULL ELSE secondary.wono END, secondary.wwono
+    FROM layer_bronze.synop_s_d_imgw AS source
+    LEFT JOIN layer_bronze.synop_s_d_t_imgw AS secondary
+        ON secondary.nsp = source.nsp
+       AND secondary.rok = source.rok
+       AND secondary.mc = source.mc
+       AND secondary.dz = source.dz;
+END;
+$$;
+
+CREATE PROCEDURE layer_gold.refresh()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    first_date date;
+    last_date date;
+BEGIN
+    SELECT min(observation_date), max(observation_date)
+    INTO first_date, last_date
+    FROM layer_silver.weather_daily;
+
+    IF first_date IS NULL OR last_date IS NULL THEN
+        RAISE EXCEPTION 'Cannot refresh Gold from an empty Silver weather table';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM layer_silver.weather_daily AS weather
+        LEFT JOIN layer_silver.synop_location_mapp AS mapping
+            ON mapping.station_code = weather.station_code
+        WHERE mapping.station_code IS NULL
+    ) THEN
+        RAISE EXCEPTION 'Cannot refresh Gold: station mapping is incomplete';
+    END IF;
+
+    IF EXISTS (
+        SELECT mapping.station_code
+        FROM layer_silver.synop_location_mapp AS mapping
+        GROUP BY mapping.station_code
+        HAVING count(DISTINCT mapping.id) > 1
+    ) THEN
+        RAISE EXCEPTION 'Cannot refresh Gold: a station code maps to multiple locations';
+    END IF;
+
+    TRUNCATE TABLE
+        layer_gold.fact_weather_daily,
+        layer_gold.dim_date,
+        layer_gold.dim_station
+    RESTART IDENTITY;
+
+    INSERT INTO layer_gold.dim_date (
+        date_key, full_date, year, quarter, month, month_name, day,
+        day_of_year, days_in_year, is_leap_year
+    )
+    SELECT
+        to_char(calendar_date, 'YYYYMMDD')::integer,
+        calendar_date,
+        extract(year FROM calendar_date)::smallint,
+        extract(quarter FROM calendar_date)::smallint,
+        extract(month FROM calendar_date)::smallint,
+        CASE extract(month FROM calendar_date)::smallint
+            WHEN 1 THEN 'January' WHEN 2 THEN 'February' WHEN 3 THEN 'March'
+            WHEN 4 THEN 'April' WHEN 5 THEN 'May' WHEN 6 THEN 'June'
+            WHEN 7 THEN 'July' WHEN 8 THEN 'August' WHEN 9 THEN 'September'
+            WHEN 10 THEN 'October' WHEN 11 THEN 'November' WHEN 12 THEN 'December'
+        END,
+        extract(day FROM calendar_date)::smallint,
+        extract(doy FROM calendar_date)::smallint,
+        (
+            make_date(extract(year FROM calendar_date)::integer + 1, 1, 1)
+            - make_date(extract(year FROM calendar_date)::integer, 1, 1)
+        )::smallint,
+        (
+            make_date(extract(year FROM calendar_date)::integer + 1, 1, 1)
+            - make_date(extract(year FROM calendar_date)::integer, 1, 1)
+        ) = 366
+    FROM generate_series(first_date, last_date, interval '1 day') AS dates(calendar_date);
+
+    INSERT INTO layer_gold.dim_station (
+        station_code, station_name, location_id, location_name, location_type
+    )
+    SELECT
+        mapping.station_code,
+        min(mapping.location_name),
+        min(mapping.id),
+        min(mapping.location_name),
+        min(mapping.location)
+    FROM layer_silver.synop_location_mapp AS mapping
+    GROUP BY mapping.station_code
+    ORDER BY mapping.station_code;
+
+    INSERT INTO layer_gold.fact_weather_daily (
+        date_key, station_key,
+        max_air_temperature_c, min_air_temperature_c, avg_air_temperature_c,
+        min_ground_temperature_c, precipitation_total_mm, precipitation_type,
+        snow_depth_cm, snow_water_equivalent_mm_cm, sunshine_duration_h,
+        rain_duration_h, snowfall_duration_h, sleet_duration_h, hail_duration_h,
+        fog_duration_h, mist_duration_h, rime_duration_h, glaze_duration_h,
+        low_drifting_snow_duration_h, high_drifting_snow_duration_h, haze_duration_h,
+        wind_ge_10_m_s_duration_h, wind_gt_15_m_s_duration_h,
+        thunderstorm_duration_h, dew_duration_h, frost_duration_h,
+        snow_cover_occurred, lightning_occurred, ground_condition,
+        lower_isotherm_cm, upper_isotherm_cm, actinometry_j_cm2,
+        avg_cloud_cover_oktas, avg_wind_speed_m_s, avg_vapour_pressure_hpa,
+        avg_relative_humidity_pct, avg_station_pressure_hpa,
+        avg_sea_level_pressure_hpa, daytime_precipitation_mm,
+        nighttime_precipitation_mm
+    )
+    SELECT
+        date_dimension.date_key,
+        station_dimension.station_key,
+        weather.max_air_temperature_c,
+        weather.min_air_temperature_c,
+        weather.avg_air_temperature_c,
+        weather.min_ground_temperature_c,
+        weather.precipitation_total_mm,
+        weather.precipitation_type,
+        weather.snow_depth_cm,
+        weather.snow_water_equivalent_mm_cm,
+        weather.sunshine_duration_h,
+        weather.rain_duration_h,
+        weather.snowfall_duration_h,
+        weather.sleet_duration_h,
+        weather.hail_duration_h,
+        weather.fog_duration_h,
+        weather.mist_duration_h,
+        weather.rime_duration_h,
+        weather.glaze_duration_h,
+        weather.low_drifting_snow_duration_h,
+        weather.high_drifting_snow_duration_h,
+        weather.haze_duration_h,
+        weather.wind_ge_10_m_s_duration_h,
+        weather.wind_gt_15_m_s_duration_h,
+        weather.thunderstorm_duration_h,
+        weather.dew_duration_h,
+        weather.frost_duration_h,
+        weather.snow_cover_occurred,
+        weather.lightning_occurred,
+        weather.ground_condition,
+        weather.lower_isotherm_cm,
+        weather.upper_isotherm_cm,
+        weather.actinometry_j_cm2,
+        weather.avg_cloud_cover_oktas,
+        weather.avg_wind_speed_m_s,
+        weather.avg_vapour_pressure_hpa,
+        weather.avg_relative_humidity_pct,
+        weather.avg_station_pressure_hpa,
+        weather.avg_sea_level_pressure_hpa,
+        weather.daytime_precipitation_mm,
+        weather.nighttime_precipitation_mm
+    FROM layer_silver.weather_daily AS weather
+    JOIN layer_gold.dim_date AS date_dimension
+        ON date_dimension.full_date = weather.observation_date
+    JOIN layer_gold.dim_station AS station_dimension
+        ON station_dimension.station_code = weather.station_code;
+END;
+$$;
+
+CREATE PROCEDURE layer_bronze.refresh_etl()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    CALL layer_silver.refresh();
+    CALL layer_gold.refresh();
+END;
+$$;

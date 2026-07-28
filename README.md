@@ -5,7 +5,7 @@ Państwowy Instytut Badawczy
 
 Python ETL pipeline that downloads public daily meteorological data from
 [IMGW](https://danepubliczne.imgw.pl/), parses the source CSV files and loads them into a
-PostgreSQL/PostGIS warehouse organized into Bronze, Silver and Gold layers.
+PostgreSQL warehouse organized into Bronze, Silver and Gold layers.
 
 ## Architecture
 
@@ -17,8 +17,9 @@ IMGW website
     -> PostgreSQL layer_bronze
 station mapping CSV
     -> SQL procedures
-    -> layer_silver
-    -> layer_gold
+    -> layer_silver.weather_daily
+    -> layer_gold.dim_date + layer_gold.dim_station
+    -> layer_gold.fact_weather_daily
 ```
 
 ## Requirements
@@ -42,7 +43,7 @@ downloaded files are stored under `data/` and are intentionally excluded from Gi
    On Windows PowerShell use `Copy-Item .env.example .env`.
 
 3. Change `DB_PASSWORD` in `.env`.
-4. Start PostgreSQL/PostGIS:
+4. Start PostgreSQL:
 
    ```bash
    docker compose up -d
@@ -89,8 +90,9 @@ The same checks run automatically in GitHub Actions.
 
 ## Database notes and current scope
 
-`postgresql_db/00_schema.sql` creates the warehouse schemas, tables, views and refresh
-procedures. The Docker image includes PostGIS, which is required by the geography columns.
+`postgresql_db/00_schema.sql` creates the warehouse schemas, tables, constraints, indexes and
+refresh procedures. Bronze preserves the source-shaped IMGW datasets, Silver integrates and
+cleans them at station-day grain, and Gold exposes a dimensional model for BI.
 
 The Python pipeline loads the two IMGW SYNOP datasets and the committed
 `postgresql_db/synop_location_mapp.csv` reference snapshot. At the beginning of every run, the
@@ -105,8 +107,9 @@ not an authoritative geographic register. The mapping may associate multiple sta
 one location, while the loader enforces complete values and a one-to-one relationship between
 each `location_name` and `id`.
 
-Administrative divisions and geographic coordinates are outside the current scope. Their Gold
-layer fields remain nullable and are not populated from an external geographic dataset.
+Administrative divisions and geographic coordinates are enriched in a separate workflow. The
+Gold station dimension is prepared for these attributes but does not invent or infer missing
+geographic values.
 
 ## Security
 
