@@ -281,6 +281,15 @@ CREATE TABLE layer_gold.dim_station (
         CHECK (valid_to IS NULL OR valid_to >= valid_from)
 );
 
+-- Stable reporting geography shared by annual BI metrics.
+CREATE TABLE layer_gold.dim_reporting_location (
+    location_key bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    location_id text NOT NULL UNIQUE,
+    location_name text NOT NULL,
+    location_type text NOT NULL,
+    voivodeship text NOT NULL
+);
+
 -- One row per station and observation day. Descriptive attributes live in dimensions.
 CREATE TABLE layer_gold.fact_weather_daily (
     date_key integer NOT NULL,
@@ -333,6 +342,65 @@ CREATE TABLE layer_gold.fact_weather_daily (
 
 CREATE INDEX fact_weather_daily_station_date_idx
     ON layer_gold.fact_weather_daily (station_key, date_key);
+
+-- One row per physical IMGW station code and calendar year.
+-- Annual metrics are NULL unless their own source measure meets the reporting contract.
+CREATE TABLE layer_gold.fact_weather_station_year (
+    station_code bigint NOT NULL,
+    year smallint NOT NULL,
+    location_key bigint NOT NULL,
+    expected_days smallint NOT NULL,
+    observation_days smallint NOT NULL,
+    avg_temperature_days smallint NOT NULL,
+    max_temperature_days smallint NOT NULL,
+    min_temperature_days smallint NOT NULL,
+    precipitation_days smallint NOT NULL,
+    snow_cover_status_days smallint NOT NULL,
+    avg_temperature_coverage numeric(6, 5) NOT NULL,
+    max_temperature_coverage numeric(6, 5) NOT NULL,
+    min_temperature_coverage numeric(6, 5) NOT NULL,
+    precipitation_coverage numeric(6, 5) NOT NULL,
+    snow_cover_coverage numeric(6, 5) NOT NULL,
+    is_complete_year boolean NOT NULL,
+    is_avg_temperature_reportable boolean NOT NULL,
+    is_max_temperature_reportable boolean NOT NULL,
+    is_min_temperature_reportable boolean NOT NULL,
+    is_precipitation_reportable boolean NOT NULL,
+    is_snow_cover_reportable boolean NOT NULL,
+    annual_avg_air_temperature_c double precision,
+    annual_max_air_temperature_c double precision,
+    annual_min_air_temperature_c double precision,
+    annual_precipitation_total_mm double precision,
+    hot_days_ge_30_c smallint,
+    very_hot_days_ge_35_c smallint,
+    cold_nights_le_minus_20_c smallint,
+    very_cold_nights_le_minus_25_c smallint,
+    snow_cover_days smallint,
+    CONSTRAINT fact_weather_station_year_pk PRIMARY KEY (station_code, year),
+    CONSTRAINT fact_weather_station_year_location_fk
+        FOREIGN KEY (location_key)
+        REFERENCES layer_gold.dim_reporting_location (location_key),
+    CONSTRAINT fact_weather_station_year_expected_days_ck
+        CHECK (expected_days IN (365, 366)),
+    CONSTRAINT fact_weather_station_year_day_counts_ck CHECK (
+        observation_days BETWEEN 0 AND expected_days
+        AND avg_temperature_days BETWEEN 0 AND expected_days
+        AND max_temperature_days BETWEEN 0 AND expected_days
+        AND min_temperature_days BETWEEN 0 AND expected_days
+        AND precipitation_days BETWEEN 0 AND expected_days
+        AND snow_cover_status_days BETWEEN 0 AND expected_days
+    ),
+    CONSTRAINT fact_weather_station_year_coverage_ck CHECK (
+        avg_temperature_coverage BETWEEN 0 AND 1
+        AND max_temperature_coverage BETWEEN 0 AND 1
+        AND min_temperature_coverage BETWEEN 0 AND 1
+        AND precipitation_coverage BETWEEN 0 AND 1
+        AND snow_cover_coverage BETWEEN 0 AND 1
+    )
+);
+
+CREATE INDEX fact_weather_station_year_location_year_idx
+    ON layer_gold.fact_weather_station_year (location_key, year);
 
 CREATE PROCEDURE layer_silver.refresh()
 LANGUAGE plpgsql
@@ -495,7 +563,9 @@ BEGIN
     END IF;
 
     TRUNCATE TABLE
+        layer_gold.fact_weather_station_year,
         layer_gold.fact_weather_daily,
+        layer_gold.dim_reporting_location,
         layer_gold.dim_date,
         layer_gold.dim_station
     RESTART IDENTITY;
@@ -527,6 +597,17 @@ BEGIN
             - make_date(extract(year FROM calendar_date)::integer, 1, 1)
         ) = 366
     FROM generate_series(first_date, last_date, interval '1 day') AS dates(calendar_date);
+
+    INSERT INTO layer_gold.dim_reporting_location (
+        location_id, location_name, location_type, voivodeship
+    )
+    SELECT
+        location_id,
+        location_name,
+        location_type,
+        voivodeship
+    FROM layer_silver.station_reporting_location
+    ORDER BY location_id;
 
     INSERT INTO layer_gold.dim_station (
         station_code, official_station_name, valid_from, valid_to, is_current,
@@ -629,6 +710,143 @@ BEGIN
             station_dimension.valid_to IS NULL
             OR weather.observation_date <= station_dimension.valid_to
        );
+
+    INSERT INTO layer_gold.fact_weather_station_year (
+        station_code, year, location_key, expected_days, observation_days,
+        avg_temperature_days, max_temperature_days, min_temperature_days,
+        precipitation_days, snow_cover_status_days,
+        avg_temperature_coverage, max_temperature_coverage,
+        min_temperature_coverage, precipitation_coverage, snow_cover_coverage,
+        is_complete_year,
+        is_avg_temperature_reportable, is_max_temperature_reportable,
+        is_min_temperature_reportable, is_precipitation_reportable,
+        is_snow_cover_reportable,
+        annual_avg_air_temperature_c, annual_max_air_temperature_c,
+        annual_min_air_temperature_c, annual_precipitation_total_mm,
+        hot_days_ge_30_c, very_hot_days_ge_35_c,
+        cold_nights_le_minus_20_c, very_cold_nights_le_minus_25_c,
+        snow_cover_days
+    )
+    WITH station_location AS (
+        SELECT alias.station_code, min(alias.location_id) AS location_id
+        FROM layer_silver.station_alias AS alias
+        GROUP BY alias.station_code
+    ),
+    station_year AS (
+        SELECT
+            weather.station_code,
+            extract(year FROM weather.observation_date)::smallint AS year,
+            (
+                make_date(extract(year FROM weather.observation_date)::integer + 1, 1, 1)
+                - make_date(extract(year FROM weather.observation_date)::integer, 1, 1)
+            )::smallint AS expected_days,
+            count(*)::smallint AS observation_days,
+            count(weather.avg_air_temperature_c)::smallint AS avg_temperature_days,
+            count(weather.max_air_temperature_c)::smallint AS max_temperature_days,
+            count(weather.min_air_temperature_c)::smallint AS min_temperature_days,
+            count(weather.precipitation_total_mm)::smallint AS precipitation_days,
+            count(weather.snow_cover_occurred)::smallint AS snow_cover_status_days,
+            avg(weather.avg_air_temperature_c) AS raw_avg_air_temperature_c,
+            max(weather.max_air_temperature_c) AS raw_max_air_temperature_c,
+            min(weather.min_air_temperature_c) AS raw_min_air_temperature_c,
+            sum(weather.precipitation_total_mm) AS raw_precipitation_total_mm,
+            count(*) FILTER (
+                WHERE weather.max_air_temperature_c >= 30
+            )::smallint AS raw_hot_days_ge_30_c,
+            count(*) FILTER (
+                WHERE weather.max_air_temperature_c >= 35
+            )::smallint AS raw_very_hot_days_ge_35_c,
+            count(*) FILTER (
+                WHERE weather.min_air_temperature_c <= -20
+            )::smallint AS raw_cold_nights_le_minus_20_c,
+            count(*) FILTER (
+                WHERE weather.min_air_temperature_c <= -25
+            )::smallint AS raw_very_cold_nights_le_minus_25_c,
+            count(*) FILTER (
+                WHERE weather.snow_cover_occurred
+            )::smallint AS raw_snow_cover_days
+        FROM layer_silver.weather_daily AS weather
+        GROUP BY weather.station_code, extract(year FROM weather.observation_date)
+    ),
+    quality AS (
+        SELECT
+            station_year.*,
+            station_year.avg_temperature_days::numeric
+                / station_year.expected_days AS avg_temperature_coverage,
+            station_year.max_temperature_days::numeric
+                / station_year.expected_days AS max_temperature_coverage,
+            station_year.min_temperature_days::numeric
+                / station_year.expected_days AS min_temperature_coverage,
+            station_year.precipitation_days::numeric
+                / station_year.expected_days AS precipitation_coverage,
+            station_year.snow_cover_status_days::numeric
+                / station_year.expected_days AS snow_cover_coverage,
+            make_date(station_year.year + 1, 1, 1) - 1 <= last_date AS is_complete_year
+        FROM station_year
+    )
+    SELECT
+        quality.station_code,
+        quality.year,
+        location.location_key,
+        quality.expected_days,
+        quality.observation_days,
+        quality.avg_temperature_days,
+        quality.max_temperature_days,
+        quality.min_temperature_days,
+        quality.precipitation_days,
+        quality.snow_cover_status_days,
+        quality.avg_temperature_coverage,
+        quality.max_temperature_coverage,
+        quality.min_temperature_coverage,
+        quality.precipitation_coverage,
+        quality.snow_cover_coverage,
+        quality.is_complete_year,
+        quality.is_complete_year AND quality.avg_temperature_coverage >= 0.95,
+        quality.is_complete_year AND quality.max_temperature_coverage >= 0.95,
+        quality.is_complete_year AND quality.min_temperature_coverage >= 0.95,
+        quality.is_complete_year AND quality.precipitation_coverage >= 0.95,
+        quality.is_complete_year AND quality.snow_cover_coverage >= 0.95,
+        CASE
+            WHEN quality.is_complete_year AND quality.avg_temperature_coverage >= 0.95
+            THEN quality.raw_avg_air_temperature_c
+        END,
+        CASE
+            WHEN quality.is_complete_year AND quality.max_temperature_coverage >= 0.95
+            THEN quality.raw_max_air_temperature_c
+        END,
+        CASE
+            WHEN quality.is_complete_year AND quality.min_temperature_coverage >= 0.95
+            THEN quality.raw_min_air_temperature_c
+        END,
+        CASE
+            WHEN quality.is_complete_year AND quality.precipitation_coverage >= 0.95
+            THEN quality.raw_precipitation_total_mm
+        END,
+        CASE
+            WHEN quality.is_complete_year AND quality.max_temperature_coverage >= 0.95
+            THEN quality.raw_hot_days_ge_30_c
+        END,
+        CASE
+            WHEN quality.is_complete_year AND quality.max_temperature_coverage >= 0.95
+            THEN quality.raw_very_hot_days_ge_35_c
+        END,
+        CASE
+            WHEN quality.is_complete_year AND quality.min_temperature_coverage >= 0.95
+            THEN quality.raw_cold_nights_le_minus_20_c
+        END,
+        CASE
+            WHEN quality.is_complete_year AND quality.min_temperature_coverage >= 0.95
+            THEN quality.raw_very_cold_nights_le_minus_25_c
+        END,
+        CASE
+            WHEN quality.is_complete_year AND quality.snow_cover_coverage >= 0.95
+            THEN quality.raw_snow_cover_days
+        END
+    FROM quality
+    JOIN station_location
+        ON station_location.station_code = quality.station_code
+    JOIN layer_gold.dim_reporting_location AS location
+        ON location.location_id = station_location.location_id;
 END;
 $$;
 
