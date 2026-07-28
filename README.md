@@ -18,8 +18,8 @@ IMGW website
 versioned station reference data
     -> SQL procedures
     -> layer_silver.weather_daily
-    -> layer_gold.dim_date + layer_gold.dim_station
-    -> layer_gold.fact_weather_daily
+    -> layer_gold dimensions
+    -> layer_gold.fact_weather_daily + layer_gold.fact_weather_station_year
 ```
 
 ## Requirements
@@ -106,6 +106,10 @@ The Python pipeline loads the two IMGW SYNOP datasets and three committed refere
 All three files are validated and loaded into Silver in one database transaction. Gold uses an
 SCD Type 2 station dimension and assigns each observation to the metadata version valid on its
 observation date. See `docs/station-metadata.md` for provenance and interpretation rules.
+
+Annual Power BI metrics are exposed at station-year grain and are published only when their own
+source measure reaches the documented completeness threshold. See `docs/metric-contract.md` for
+the exact metric, weighting and incomplete-year rules.
 
 ## Security
 

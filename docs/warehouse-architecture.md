@@ -53,7 +53,9 @@ Gold is a star schema designed for Power BI:
 - `layer_gold.dim_date` contains one row per calendar date;
 - `layer_gold.dim_station` is an SCD Type 2 dimension with one row per station code and
   metadata validity period;
+- `layer_gold.dim_reporting_location` contains one row per stable BI reporting location;
 - `layer_gold.fact_weather_daily` contains one row per station and observation date.
+- `layer_gold.fact_weather_station_year` contains one row per station code and calendar year.
 
 The fact table stores foreign keys and measurements only. Each observation joins to exactly one
 station version through its station code and observation date. Official station names,
@@ -62,6 +64,10 @@ repeated across daily observations.
 
 `metadata_status` distinguishes official IMGW versions from explicit `unavailable` coverage
 periods. Unavailable periods retain reporting geography but never infer coordinates or elevation.
+
+The annual fact is a quality-gated aggregate for Power BI. It calculates completeness separately
+for each source measure and publishes an annual value only for a completed year with at least 95%
+coverage. See [BI metric contract](metric-contract.md) for metric formulas and aggregation rules.
 
 ## Refresh order
 
