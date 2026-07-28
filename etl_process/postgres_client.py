@@ -67,6 +67,32 @@ class PostgresClient:
                 method="multi",
             )
 
+    def replace_tables_data(
+        self,
+        tables: dict[str, pd.DataFrame],
+        schema: str | None = None,
+    ) -> None:
+        if self.engine is None:
+            raise RuntimeError("Database connection has not been initialized")
+
+        target_schema = schema or self.schema
+        with self.engine.begin() as connection:
+            table_names = ", ".join(
+                f'"{target_schema}"."{table_name}"'
+                for table_name in tables
+            )
+            connection.execute(text(f"TRUNCATE TABLE {table_names}"))
+            for table_name, dataframe in tables.items():
+                dataframe.to_sql(
+                    name=table_name,
+                    con=connection,
+                    schema=target_schema,
+                    if_exists="append",
+                    index=False,
+                    chunksize=self.chunksize,
+                    method="multi",
+                )
+
     def exec_procedure(
         self,
         proc_name: str

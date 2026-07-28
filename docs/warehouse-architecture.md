@@ -33,6 +33,13 @@ Silver:
 - retains status `9` as the explicit absence of a phenomenon;
 - retains the secondary daily mean temperature for source reconciliation.
 
+Station reference data is separated by responsibility:
+
+- `station_alias` resolves historical names from the measurement files;
+- `station_metadata_history` preserves official IMGW metadata validity periods;
+- `station_reporting_location` provides stable reporting locations and contemporary
+  voivodeships for BI.
+
 `STD` from `s_d` is the canonical daily mean temperature. `TEMP` from `s_d_t` is not published
 as a competing Gold metric because the source values are not always equal.
 
@@ -44,12 +51,17 @@ as daytime and nighttime source measures but are not assumed to sum to `SMDB`.
 Gold is a star schema designed for Power BI:
 
 - `layer_gold.dim_date` contains one row per calendar date;
-- `layer_gold.dim_station` contains one row per IMGW station code;
+- `layer_gold.dim_station` is an SCD Type 2 dimension with one row per station code and
+  metadata validity period;
 - `layer_gold.fact_weather_daily` contains one row per station and observation date.
 
-The fact table stores foreign keys and measurements only. Station names, locations,
-administrative divisions and coordinates belong to `dim_station` and are not repeated across
-daily observations.
+The fact table stores foreign keys and measurements only. Each observation joins to exactly one
+station version through its station code and observation date. Official station names,
+coordinates, elevation, reporting locations and voivodeships belong to `dim_station` and are not
+repeated across daily observations.
+
+`metadata_status` distinguishes official IMGW versions from explicit `unavailable` coverage
+periods. Unavailable periods retain reporting geography but never infer coordinates or elevation.
 
 ## Refresh order
 
@@ -65,10 +77,12 @@ Gold refresh refuses to run when:
 
 - Silver contains no weather rows;
 - a weather station has no reference mapping;
-- one station code maps to more than one location.
+- one station code maps to more than one reporting location;
+- an observation matches zero or multiple station metadata periods.
 
-## Deferred geographic enrichment
+## Geographic scope
 
-The station dimension contains nullable fields for voivodeship, latitude, longitude and
-elevation. They are populated only from a reviewed station metadata source in a separate package.
-PostGIS is not required until the project implements an actual spatial operation.
+Latitude, longitude and elevation follow the official historical IMGW metadata period valid for
+the observation. Voivodeship is a contemporary reporting classification and does not attempt to
+reconstruct historical administrative boundaries. PostGIS remains deferred until the project
+implements an actual spatial operation.
