@@ -26,7 +26,7 @@ data. Reporting location and voivodeship remain available from the separate proj
 Run the following command to review a newer source snapshot:
 
 ```bash
-python scripts/update_station_metadata.py
+python -m etl_process.station_metadata
 ```
 
 Changes to a snapshot must be reviewed like code because IMGW states that its metadata is

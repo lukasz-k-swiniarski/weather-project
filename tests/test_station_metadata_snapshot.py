@@ -1,6 +1,6 @@
 from datetime import date
 
-from scripts.update_station_metadata import (
+from etl_process.station_metadata import (
     _normalize_partial_date,
     decode_source,
     normalize_records,
