@@ -168,7 +168,7 @@
             "titleText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Temperature (Celcius)'"
+                  "Value": "'Temperature (°C)'"
                 }
               }
             },
@@ -483,7 +483,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Yearly Average Temperature Trend'"
+                  "Value": "'Annual Mean Temperature and 10-Year Trend'"
                 }
               }
             }

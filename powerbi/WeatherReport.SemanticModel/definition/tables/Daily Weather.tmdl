@@ -1,5 +1,6 @@
 table 'Daily Weather'
 	lineageTag: ed55e395-775c-4dba-b220-f4b7edace996
+	isHidden
 
 	column date_key
 		dataType: int64
