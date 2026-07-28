@@ -16,6 +16,18 @@ def test_schema_defines_dimensional_gold_model():
     assert "primary key (date_key, station_key)" in sql
     assert "foreign key (date_key)" in sql
     assert "foreign key (station_key)" in sql
+    assert "unique (station_code, valid_from)" in sql
+    assert "weather.observation_date >= station_dimension.valid_from" in sql
+
+
+def test_schema_defines_versioned_station_reference_tables():
+    sql = schema_sql()
+
+    assert "create table layer_silver.station_alias" in sql
+    assert "create table layer_silver.station_reporting_location" in sql
+    assert "create table layer_silver.station_metadata_history" in sql
+    assert "primary key (station_code, valid_from)" in sql
+    assert "voivodeship text not null" in sql
 
 
 def test_silver_uses_station_day_grain_and_both_sources():

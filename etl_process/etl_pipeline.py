@@ -32,7 +32,9 @@ class ETLPipeline:
         self.parser = Parser(self.dataset_schema_config, self.schema_loader)
         self.reference_loader = ReferenceDataLoader(
             self.db,
-            PROJECT_DIR / "postgresql_db" / "synop_location_mapp.csv",
+            PROJECT_DIR / "postgresql_db" / "station_alias.csv",
+            PROJECT_DIR / "postgresql_db" / "station_reporting_location.csv",
+            PROJECT_DIR / "postgresql_db" / "station_metadata_history.csv",
         )
 
     def _init_db(self) -> PostgresClient:
@@ -74,9 +76,9 @@ class ETLPipeline:
             logger.info("Database connection closed")
 
     def _load_reference_data(self) -> None:
-        logger.info("Loading station-to-location reference mapping")
-        row_count = self.reference_loader.load_station_mapping()
-        logger.info("Loaded %s station mapping rows", row_count)
+        logger.info("Loading station reference data")
+        row_counts = self.reference_loader.load_station_reference_data()
+        logger.info("Loaded station reference rows: %s", row_counts)
 
     def _collect_files(self) -> list[str]:
         logger.info("Starting crawl phase")

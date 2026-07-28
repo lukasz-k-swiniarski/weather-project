@@ -15,7 +15,7 @@ IMGW website
     -> local ZIP/CSV staging (ignored by Git)
     -> Pandas parsing
     -> PostgreSQL layer_bronze
-station mapping CSV
+versioned station reference data
     -> SQL procedures
     -> layer_silver.weather_daily
     -> layer_gold.dim_date + layer_gold.dim_station
@@ -94,22 +94,18 @@ The same checks run automatically in GitHub Actions.
 refresh procedures. Bronze preserves the source-shaped IMGW datasets, Silver integrates and
 cleans them at station-day grain, and Gold exposes a dimensional model for BI.
 
-The Python pipeline loads the two IMGW SYNOP datasets and the committed
-`postgresql_db/synop_location_mapp.csv` reference snapshot. At the beginning of every run, the
-mapping file is fully validated and replaces the contents of
-`layer_silver.synop_location_mapp` in a single database transaction. The warehouse refresh
-procedure runs only after the mapping and weather datasets have been loaded successfully.
+The Python pipeline loads the two IMGW SYNOP datasets and three committed reference snapshots:
 
-The station mapping is a manually maintained, project-specific lookup intended only to support
-this application's data-processing workflow. Its `id` values are internal identifiers
-with no meaning outside this project, and its location names and types are project-defined labels,
-not an authoritative geographic register. The mapping may associate multiple station names with
-one location, while the loader enforces complete values and a one-to-one relationship between
-each `location_name` and `id`.
+- `postgresql_db/station_alias.csv` maps historical source names to IMGW station codes and
+  project reporting locations;
+- `postgresql_db/station_metadata_history.csv` contains versioned official IMGW coordinates,
+  elevation and validity periods;
+- `postgresql_db/station_reporting_location.csv` contains the contemporary reporting location
+  and voivodeship classification used by Power BI.
 
-Administrative divisions and geographic coordinates are enriched in a separate workflow. The
-Gold station dimension is prepared for these attributes but does not invent or infer missing
-geographic values.
+All three files are validated and loaded into Silver in one database transaction. Gold uses an
+SCD Type 2 station dimension and assigns each observation to the metadata version valid on its
+observation date. See `docs/station-metadata.md` for provenance and interpretation rules.
 
 ## Security
 

@@ -103,18 +103,57 @@ CREATE TABLE layer_bronze.synop_s_d_t_imgw (
 CREATE DOMAIN layer_silver.measurement_status AS smallint
     CHECK (VALUE IS NULL OR VALUE IN (8, 9));
 
--- Project-owned station reference data. Geographic enrichment is added in a later package.
-CREATE TABLE layer_silver.synop_location_mapp (
+-- Source station names are aliases because IMGW names change over time.
+CREATE TABLE layer_silver.station_alias (
     station_name text NOT NULL,
-    location text NOT NULL,
-    location_name text NOT NULL,
-    id text NOT NULL,
     station_code bigint NOT NULL,
-    CONSTRAINT synop_location_mapp_station_name_uk UNIQUE (station_name)
+    location_id text NOT NULL,
+    CONSTRAINT station_alias_station_name_uk UNIQUE (station_name)
 );
 
-CREATE INDEX synop_location_mapp_station_code_idx
-    ON layer_silver.synop_location_mapp (station_code);
+CREATE INDEX station_alias_station_code_idx
+    ON layer_silver.station_alias (station_code);
+
+-- Contemporary reporting geography used by Power BI.
+CREATE TABLE layer_silver.station_reporting_location (
+    location_id text PRIMARY KEY,
+    location_name text NOT NULL UNIQUE,
+    location_type text NOT NULL,
+    voivodeship text NOT NULL,
+    source_url text NOT NULL,
+    source_as_of date NOT NULL
+);
+
+ALTER TABLE layer_silver.station_alias
+    ADD CONSTRAINT station_alias_location_fk
+    FOREIGN KEY (location_id)
+    REFERENCES layer_silver.station_reporting_location (location_id);
+
+-- Official IMGW station history. Validity intervals are inclusive.
+CREATE TABLE layer_silver.station_metadata_history (
+    station_code bigint NOT NULL,
+    official_station_name text,
+    valid_from date NOT NULL,
+    valid_to date,
+    station_type text,
+    data_rank text,
+    latitude double precision,
+    longitude double precision,
+    elevation_m double precision,
+    metadata_status text NOT NULL,
+    source_url text NOT NULL,
+    source_retrieved_at date NOT NULL,
+    CONSTRAINT station_metadata_history_pk
+        PRIMARY KEY (station_code, valid_from),
+    CONSTRAINT station_metadata_history_period_ck
+        CHECK (valid_to IS NULL OR valid_to >= valid_from),
+    CONSTRAINT station_metadata_history_status_ck
+        CHECK (metadata_status IN ('official', 'unavailable')),
+    CONSTRAINT station_metadata_history_latitude_ck
+        CHECK (latitude BETWEEN 48.5 AND 55.5),
+    CONSTRAINT station_metadata_history_longitude_ck
+        CHECK (longitude BETWEEN 13.5 AND 24.5)
+);
 
 -- One row per IMGW station and observation day.
 CREATE TABLE layer_silver.weather_daily (
@@ -219,18 +258,27 @@ CREATE TABLE layer_gold.dim_date (
     is_leap_year boolean NOT NULL
 );
 
--- One row per IMGW station code. Administrative and coordinate fields are enriched later.
+-- SCD Type 2: one row per IMGW station code and metadata validity period.
 CREATE TABLE layer_gold.dim_station (
     station_key bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    station_code bigint NOT NULL UNIQUE,
-    station_name text NOT NULL,
-    location_id text,
-    location_name text,
-    location_type text,
-    voivodeship text,
+    station_code bigint NOT NULL,
+    official_station_name text,
+    valid_from date NOT NULL,
+    valid_to date,
+    is_current boolean NOT NULL,
+    station_type text,
+    data_rank text,
+    location_id text NOT NULL,
+    location_name text NOT NULL,
+    location_type text NOT NULL,
+    voivodeship text NOT NULL,
     latitude double precision,
     longitude double precision,
-    elevation_m double precision
+    elevation_m double precision,
+    metadata_status text NOT NULL,
+    CONSTRAINT dim_station_version_uk UNIQUE (station_code, valid_from),
+    CONSTRAINT dim_station_period_ck
+        CHECK (valid_to IS NULL OR valid_to >= valid_from)
 );
 
 -- One row per station and observation day. Descriptive attributes live in dimensions.
@@ -413,20 +461,37 @@ BEGIN
     IF EXISTS (
         SELECT 1
         FROM layer_silver.weather_daily AS weather
-        LEFT JOIN layer_silver.synop_location_mapp AS mapping
-            ON mapping.station_code = weather.station_code
-        WHERE mapping.station_code IS NULL
+        LEFT JOIN layer_silver.station_alias AS alias
+            ON alias.station_code = weather.station_code
+        WHERE alias.station_code IS NULL
     ) THEN
-        RAISE EXCEPTION 'Cannot refresh Gold: station mapping is incomplete';
+        RAISE EXCEPTION 'Cannot refresh Gold: station alias mapping is incomplete';
     END IF;
 
     IF EXISTS (
-        SELECT mapping.station_code
-        FROM layer_silver.synop_location_mapp AS mapping
-        GROUP BY mapping.station_code
-        HAVING count(DISTINCT mapping.id) > 1
+        SELECT alias.station_code
+        FROM layer_silver.station_alias AS alias
+        GROUP BY alias.station_code
+        HAVING count(DISTINCT alias.location_id) > 1
     ) THEN
         RAISE EXCEPTION 'Cannot refresh Gold: a station code maps to multiple locations';
+    END IF;
+
+    IF EXISTS (
+        SELECT weather.station_code, weather.observation_date
+        FROM layer_silver.weather_daily AS weather
+        LEFT JOIN layer_silver.station_metadata_history AS metadata
+            ON metadata.station_code = weather.station_code
+           AND weather.observation_date >= metadata.valid_from
+           AND (
+                metadata.valid_to IS NULL
+                OR weather.observation_date <= metadata.valid_to
+           )
+        GROUP BY weather.station_code, weather.observation_date
+        HAVING count(metadata.station_code) <> 1
+    ) THEN
+        RAISE EXCEPTION
+            'Cannot refresh Gold: every observation must match exactly one station metadata period';
     END IF;
 
     TRUNCATE TABLE
@@ -464,17 +529,36 @@ BEGIN
     FROM generate_series(first_date, last_date, interval '1 day') AS dates(calendar_date);
 
     INSERT INTO layer_gold.dim_station (
-        station_code, station_name, location_id, location_name, location_type
+        station_code, official_station_name, valid_from, valid_to, is_current,
+        station_type, data_rank, location_id, location_name, location_type,
+        voivodeship, latitude, longitude, elevation_m, metadata_status
     )
     SELECT
-        mapping.station_code,
-        min(mapping.location_name),
-        min(mapping.id),
-        min(mapping.location_name),
-        min(mapping.location)
-    FROM layer_silver.synop_location_mapp AS mapping
-    GROUP BY mapping.station_code
-    ORDER BY mapping.station_code;
+        metadata.station_code,
+        metadata.official_station_name,
+        metadata.valid_from,
+        metadata.valid_to,
+        metadata.valid_to IS NULL,
+        metadata.station_type,
+        metadata.data_rank,
+        code_location.location_id,
+        location.location_name,
+        location.location_type,
+        location.voivodeship,
+        metadata.latitude,
+        metadata.longitude,
+        metadata.elevation_m,
+        metadata.metadata_status
+    FROM layer_silver.station_metadata_history AS metadata
+    JOIN (
+        SELECT alias.station_code, min(alias.location_id) AS location_id
+        FROM layer_silver.station_alias AS alias
+        GROUP BY alias.station_code
+    ) AS code_location
+        ON code_location.station_code = metadata.station_code
+    JOIN layer_silver.station_reporting_location AS location
+        ON location.location_id = code_location.location_id
+    ORDER BY metadata.station_code, metadata.valid_from;
 
     INSERT INTO layer_gold.fact_weather_daily (
         date_key, station_key,
@@ -539,7 +623,12 @@ BEGIN
     JOIN layer_gold.dim_date AS date_dimension
         ON date_dimension.full_date = weather.observation_date
     JOIN layer_gold.dim_station AS station_dimension
-        ON station_dimension.station_code = weather.station_code;
+        ON station_dimension.station_code = weather.station_code
+       AND weather.observation_date >= station_dimension.valid_from
+       AND (
+            station_dimension.valid_to IS NULL
+            OR weather.observation_date <= station_dimension.valid_to
+       );
 END;
 $$;
 
