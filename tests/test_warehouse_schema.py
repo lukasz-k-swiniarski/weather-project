@@ -12,12 +12,41 @@ def test_schema_defines_dimensional_gold_model():
 
     assert "create table layer_gold.dim_date" in sql
     assert "create table layer_gold.dim_station" in sql
+    assert "create table layer_gold.dim_reporting_location" in sql
     assert "create table layer_gold.fact_weather_daily" in sql
+    assert "create table layer_gold.fact_weather_station_year" in sql
     assert "primary key (date_key, station_key)" in sql
     assert "foreign key (date_key)" in sql
     assert "foreign key (station_key)" in sql
     assert "unique (station_code, valid_from)" in sql
     assert "weather.observation_date >= station_dimension.valid_from" in sql
+
+
+def test_annual_fact_has_explicit_grain_and_quality_contract():
+    sql = schema_sql()
+
+    assert "primary key (station_code, year)" in sql
+    assert "expected_days in (365, 366)" in sql
+    assert "avg_temperature_coverage >= 0.95" in sql
+    assert "max_temperature_coverage >= 0.95" in sql
+    assert "min_temperature_coverage >= 0.95" in sql
+    assert "precipitation_coverage >= 0.95" in sql
+    assert "snow_cover_coverage >= 0.95" in sql
+    assert "weather.max_air_temperature_c >= 30" in sql
+    assert "weather.max_air_temperature_c >= 35" in sql
+    assert "weather.min_air_temperature_c <= -20" in sql
+    assert "weather.min_air_temperature_c <= -25" in sql
+
+
+def test_incomplete_annual_metrics_are_null_in_the_warehouse():
+    sql = schema_sql()
+
+    assert "make_date(station_year.year + 1, 1, 1) - 1 <= last_date" in sql
+    assert (
+        "when quality.is_complete_year and quality.precipitation_coverage >= 0.95"
+        in sql
+    )
+    assert "then quality.raw_precipitation_total_mm" in sql
 
 
 def test_schema_defines_versioned_station_reference_tables():
