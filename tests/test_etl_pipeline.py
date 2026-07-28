@@ -1,5 +1,7 @@
 from unittest.mock import Mock, call
 
+import pytest
+
 from etl_process.etl_pipeline import ETLPipeline
 
 
@@ -26,3 +28,12 @@ def test_pipeline_loads_reference_data_before_refresh():
         call.refresh_db(),
     ]
     pipeline.db.disconnect.assert_called_once_with()
+
+
+def test_refresh_error_is_not_suppressed():
+    pipeline = object.__new__(ETLPipeline)
+    pipeline.db = Mock()
+    pipeline.db.exec_procedure.side_effect = RuntimeError("refresh failed")
+
+    with pytest.raises(RuntimeError, match="refresh failed"):
+        pipeline._refresh_db()

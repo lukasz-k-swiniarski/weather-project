@@ -37,7 +37,6 @@ def get_db_config():
         "user": os.environ["DB_USER"],
         "password": os.environ["DB_PASSWORD"],
         "schema": os.environ["DB_SCHEMA"],
-        "if_exists": "replace",
         "chunksize": 1000,
     }
 

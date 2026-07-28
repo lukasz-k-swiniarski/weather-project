@@ -6,10 +6,9 @@ from sqlalchemy import URL, create_engine, text
 logger = logging.getLogger(__name__)
 
 class PostgresClient:
-    def __init__(self, host, port, dbname, user, password, schema, if_exists, chunksize):
+    def __init__(self, host, port, dbname, user, password, schema, chunksize):
         self.host = host
         self.schema = schema
-        self.if_exists = if_exists
         self.chunksize = chunksize
         self.connection_url = URL.create(
             drivername="postgresql+psycopg2",
@@ -38,14 +37,10 @@ class PostgresClient:
         table_name: str,
     ):
         df.columns = df.columns.str.lower().str.replace(' ', '_')
-        df.to_sql(
-            name=table_name,
-            con=self.engine,
+        self.replace_table_data(
+            df,
+            table_name,
             schema=self.schema,
-            if_exists=self.if_exists,
-            index=False,
-            chunksize=self.chunksize,
-            method="multi"  # batch insert
         )
 
     def replace_table_data(
@@ -59,7 +54,9 @@ class PostgresClient:
 
         target_schema = schema or self.schema
         with self.engine.begin() as connection:
-            connection.execute(text(f'DELETE FROM "{target_schema}"."{table_name}"'))
+            connection.execute(
+                text(f'TRUNCATE TABLE "{target_schema}"."{table_name}"')
+            )
             df.to_sql(
                 name=table_name,
                 con=connection,

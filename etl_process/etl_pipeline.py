@@ -135,5 +135,6 @@ class ETLPipeline:
         try:
             self.db.exec_procedure('refresh_etl')
             logger.info("Procedures executed successfully")
-        except Exception as e:
-            logger.exception(f"Procedure exec failed: {e}")
+        except Exception:
+            logger.exception("Procedure execution failed")
+            raise
