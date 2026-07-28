@@ -121,8 +121,10 @@ def test_station_year_metrics_enforce_measure_specific_coverage(database):
                 very_hot_days_ge_35_c,
                 cold_nights_le_minus_20_c,
                 very_cold_nights_le_minus_25_c
-            FROM layer_gold.fact_weather_station_year
-            WHERE station_code = 100 AND year = 2020
+            FROM layer_gold.fact_weather_station_year AS fact
+            JOIN layer_gold.dim_station AS station
+                ON station.station_key = fact.station_key
+            WHERE station.station_code = 100 AND fact.year = 2020
             """
         )
         complete_year = cursor.fetchone()
@@ -135,8 +137,10 @@ def test_station_year_metrics_enforce_measure_specific_coverage(database):
                 is_complete_year,
                 annual_avg_air_temperature_c,
                 annual_precipitation_total_mm
-            FROM layer_gold.fact_weather_station_year
-            WHERE station_code = 100 AND year = 2021
+            FROM layer_gold.fact_weather_station_year AS fact
+            JOIN layer_gold.dim_station AS station
+                ON station.station_key = fact.station_key
+            WHERE station.station_code = 100 AND fact.year = 2021
             """
         )
         assert cursor.fetchone() == (False, None, None)

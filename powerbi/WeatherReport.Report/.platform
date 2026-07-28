@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "WeatherReport"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "91e50ba8-4666-47eb-b93e-6b37292abd7f"
+  }
+}

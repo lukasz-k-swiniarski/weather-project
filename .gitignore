@@ -23,6 +23,9 @@ logs/
 tmp/
 *.log
 
+# Power BI project-local cache and user settings
+**/.pbi/
+
 # Operating systems
 .DS_Store
 Thumbs.db

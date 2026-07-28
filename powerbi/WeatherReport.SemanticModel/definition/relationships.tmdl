@@ -1,0 +1,18 @@
+relationship daily_to_date
+	fromColumn: 'Daily Weather'.date_key
+	toColumn: Date.date_key
+
+relationship daily_to_station
+	fromColumn: 'Daily Weather'.station_key
+	toColumn: Station.station_key
+relationship station_to_location
+	fromColumn: Station.location_key
+	toColumn: 'Reporting Location'.location_key
+
+relationship annual_to_year
+	fromColumn: 'Station Year Weather'.year
+	toColumn: Year.year
+
+relationship annual_to_station
+	fromColumn: 'Station Year Weather'.station_key
+	toColumn: Station.station_key

@@ -9,13 +9,15 @@ from changing a result silently.
 `layer_gold.fact_weather_station_year` has exactly one row per:
 
 ```text
-station_code + calendar_year
+station_key + calendar_year
 ```
 
 `station_code` identifies a physical IMGW series. Reporting geography is supplied by
 `layer_gold.dim_reporting_location`, whose grain is one stable project reporting location.
-The annual fact uses the location assigned to the station code by the validated alias mapping.
-It does not use an SCD station key because station metadata can change inside a calendar year.
+The annual fact resolves each station-year to the station dimension version valid on the first
+day of that calendar year and stores its surrogate `station_key`.
+`layer_gold.dim_year` provides the conformed one-side relationship to both annual rows and daily
+dates.
 
 ## Completeness
 

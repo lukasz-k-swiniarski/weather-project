@@ -1,0 +1,68 @@
+table 'Daily Weather'
+	lineageTag: ed55e395-775c-4dba-b220-f4b7edace996
+
+	column date_key
+		dataType: int64
+		isHidden
+		lineageTag: eadf77a5-8cc5-4390-bc31-ecaa0698f135
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column station_key
+		dataType: int64
+		isHidden
+		lineageTag: 8a310da7-71dd-4afb-9fa8-106a664b9392
+		summarizeBy: none
+		sourceColumn: station_key
+
+	column max_air_temperature_c
+		dataType: double
+		formatString: 0.0
+		lineageTag: 36b27877-74ae-42a6-9717-005be802e884
+		summarizeBy: none
+		sourceColumn: max_air_temperature_c
+
+	column min_air_temperature_c
+		dataType: double
+		formatString: 0.0
+		lineageTag: 6cf71a94-548d-4e09-81ab-dda53283e20a
+		summarizeBy: none
+		sourceColumn: min_air_temperature_c
+
+	column avg_air_temperature_c
+		dataType: double
+		formatString: 0.0
+		lineageTag: bf93b0a7-8a20-487d-abd6-f20d0075940c
+		summarizeBy: none
+		sourceColumn: avg_air_temperature_c
+
+	column precipitation_total_mm
+		dataType: double
+		formatString: 0.0
+		lineageTag: b5b829c6-da78-4ba2-b647-2d69c6fffba8
+		summarizeBy: none
+		sourceColumn: precipitation_total_mm
+
+	column snow_depth_cm
+		dataType: double
+		formatString: 0.0
+		lineageTag: d7b94ead-ef31-4d1b-9191-7a787bf16978
+		summarizeBy: none
+		sourceColumn: snow_depth_cm
+
+	column snow_cover_occurred
+		dataType: boolean
+		lineageTag: ed4819a9-691d-4bb5-b81e-0989e63f9b26
+		summarizeBy: none
+		sourceColumn: snow_cover_occurred
+
+	partition 'Daily Weather' = m
+		mode: import
+		source =
+				let
+				    Server = DatabaseServer & ":" & Text.From(DatabasePort),
+				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT date_key, station_key, max_air_temperature_c, min_air_temperature_c, avg_air_temperature_c, precipitation_total_mm, snow_depth_cm, snow_cover_occurred FROM layer_gold.fact_weather_daily", null, [EnableFolding=true])
+				in
+				    Source
+
+	annotation PBI_ResultType = Table
