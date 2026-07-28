@@ -1,0 +1,39 @@
+table Year
+	lineageTag: 17d62c4c-7999-4214-a172-87e77b4cbe86
+	dataCategory: Time
+
+	column year
+		dataType: int64
+		isKey
+		lineageTag: 857cf348-6bc5-4064-8e9a-5445a645b850
+		summarizeBy: none
+		sourceColumn: year
+
+	column expected_days
+		dataType: int64
+		lineageTag: e61846ce-dc54-46d6-9adf-919dc7ce77d4
+		summarizeBy: none
+		sourceColumn: expected_days
+
+	column is_leap_year
+		dataType: boolean
+		lineageTag: ac5cb7cb-758d-4919-9ced-5676f45b4846
+		summarizeBy: none
+		sourceColumn: is_leap_year
+
+	column is_complete_year
+		dataType: boolean
+		lineageTag: 58474790-d2e0-43ff-b031-15cc02f1a5bf
+		summarizeBy: none
+		sourceColumn: is_complete_year
+
+	partition Year = m
+		mode: import
+		source =
+				let
+				    Server = DatabaseServer & ":" & Text.From(DatabasePort),
+				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT year, expected_days, is_leap_year, is_complete_year FROM layer_gold.dim_year", null, [EnableFolding=true])
+				in
+				    Source
+
+	annotation PBI_ResultType = Table

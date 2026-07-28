@@ -1,0 +1,128 @@
+table Metrics
+	lineageTag: 96ff5a5b-d65b-47c8-8dec-d7bbeba3db7d
+
+	measure 'Annual Average Temperature' = AVERAGE('Station Year Weather'[annual_avg_air_temperature_c])
+		formatString: 0.0 "°C"
+		displayFolder: Temperature
+		lineageTag: 5c906048-805c-4653-a108-01de9ed46328
+
+	measure '10-Year Moving Average' =
+			VAR CurrentYear = MAX('Year'[year])
+			VAR WindowYears =
+			    FILTER(
+			        ALLSELECTED('Year'[year]),
+			        'Year'[year] <= CurrentYear
+			            && 'Year'[year] > CurrentYear - 10
+			    )
+			RETURN
+			    IF(
+			        COUNTROWS(WindowYears) = 10,
+			        CALCULATE([Annual Average Temperature], WindowYears)
+			    )
+		formatString: 0.0 "°C"
+		displayFolder: Temperature
+		lineageTag: ccffdc39-0e84-4627-9e94-fd8d6eae903b
+
+	measure 'Annual Highest Temperature' = MAX('Station Year Weather'[annual_max_air_temperature_c])
+		formatString: 0.0 "°C"
+		displayFolder: Temperature
+		lineageTag: 4767ff85-b8c6-4aa6-bd5c-d21219523ae6
+
+	measure 'Annual Lowest Temperature' = MIN('Station Year Weather'[annual_min_air_temperature_c])
+		formatString: 0.0 "°C"
+		displayFolder: Temperature
+		lineageTag: 69778325-0bb4-4b67-ab7d-a525b3d57ba0
+
+	measure 'Annual Average Precipitation per Station' = AVERAGE('Station Year Weather'[annual_precipitation_total_mm])
+		formatString: #,0.0 "mm"
+		displayFolder: Precipitation
+		lineageTag: 336b7a52-0d1e-4a38-b745-406592ce8ff8
+
+	measure 'Average Hot Days (>=30 °C)' = AVERAGE('Station Year Weather'[hot_days_ge_30_c])
+		formatString: 0.0
+		displayFolder: Extremes
+		lineageTag: f86df25d-377e-4526-9af4-092abf02369f
+
+	measure 'Average Very Hot Days (>=35 °C)' = AVERAGE('Station Year Weather'[very_hot_days_ge_35_c])
+		formatString: 0.0
+		displayFolder: Extremes
+		lineageTag: 61448e89-0e46-4b0a-9917-80a993b8d528
+
+	measure 'Average Cold Nights (<=-20 °C)' = AVERAGE('Station Year Weather'[cold_nights_le_minus_20_c])
+		formatString: 0.0
+		displayFolder: Extremes
+		lineageTag: b9dfd8a4-2223-4f83-8385-42f445a0f8d6
+
+	measure 'Average Very Cold Nights (<=-25 °C)' = AVERAGE('Station Year Weather'[very_cold_nights_le_minus_25_c])
+		formatString: 0.0
+		displayFolder: Extremes
+		lineageTag: 1ba0deca-feb5-43d9-912a-2058592f9164
+
+	measure 'Average Snow Cover Days' = AVERAGE('Station Year Weather'[snow_cover_days])
+		formatString: 0.0
+		displayFolder: Snow
+		lineageTag: 15c12d33-b832-4a02-886f-657d3b8395df
+
+	measure 'Reporting Stations' = DISTINCTCOUNT('Station Year Weather'[station_key])
+		formatString: 0
+		displayFolder: Data Quality
+		lineageTag: fc67a32d-e265-4997-a0da-d7513be866df
+
+	measure 'Station-Year Records' = COUNTROWS('Station Year Weather')
+		formatString: 0
+		displayFolder: Data Quality
+		lineageTag: f3e60153-5206-4568-bf49-62e3fababfeb
+
+	measure 'Complete Station-Years' =
+			CALCULATE(
+			    COUNTROWS('Station Year Weather'),
+			    'Station Year Weather'[is_complete_year] = TRUE()
+			)
+		formatString: 0
+		displayFolder: Data Quality
+		lineageTag: 007112f8-5a11-4328-b2f7-c0b84fbe5b39
+
+	measure 'Temperature Reportable Station-Years' =
+			CALCULATE(
+			    COUNTROWS('Station Year Weather'),
+			    'Station Year Weather'[is_avg_temperature_reportable] = TRUE()
+			)
+		formatString: 0
+		displayFolder: Data Quality
+		lineageTag: 6b83197a-72ea-4694-aa7f-a023c7c44958
+
+	measure 'Temperature Reporting Rate' = DIVIDE([Temperature Reportable Station-Years], [Station-Year Records])
+		formatString: 0.0%
+		displayFolder: Data Quality
+		lineageTag: 8139390f-5eb3-4d64-b0e1-d8fc178e05a9
+
+	measure 'Average Temperature Coverage' = AVERAGE('Station Year Weather'[avg_temperature_coverage])
+		formatString: 0.0%
+		displayFolder: Data Quality
+		lineageTag: 352fda82-89ca-48ad-a83f-fa4e4d9d9a6d
+
+	measure 'Average Precipitation Coverage' = AVERAGE('Station Year Weather'[precipitation_coverage])
+		formatString: 0.0%
+		displayFolder: Data Quality
+		lineageTag: a1b750bc-5de9-48c8-83c3-f79c72052a2d
+
+	measure 'Latest Complete Year' =
+			CALCULATE(
+			    MAX('Year'[year]),
+			    REMOVEFILTERS('Year'),
+			    'Year'[is_complete_year] = TRUE()
+			)
+		formatString: 0
+		displayFolder: Data Quality
+		lineageTag: 8618d4cd-a4d3-4148-8b33-bd0c542eb5a1
+
+	column Value
+		dataType: string
+		isHidden
+		lineageTag: 9cc459d9-de5b-4a93-b86e-786be2659edd
+		summarizeBy: none
+		sourceColumn: [Value]
+
+	partition Metrics = calculated
+		mode: import
+		source = { BLANK() }

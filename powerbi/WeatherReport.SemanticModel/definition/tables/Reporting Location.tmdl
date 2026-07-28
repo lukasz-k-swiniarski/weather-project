@@ -1,0 +1,46 @@
+table 'Reporting Location'
+	lineageTag: 9cd88160-496e-4781-9b16-ba02d3e8e58b
+
+	column location_key
+		dataType: int64
+		isHidden
+		isKey
+		lineageTag: c7be519e-7b76-42d7-b794-f99d92a4a21c
+		summarizeBy: none
+		sourceColumn: location_key
+
+	column location_id
+		dataType: string
+		lineageTag: 4f0fbbb9-5c4d-4380-a814-2f012bf1805c
+		summarizeBy: none
+		sourceColumn: location_id
+
+	column location_name
+		dataType: string
+		lineageTag: b4e166e2-1282-4d1a-bd6e-6cf1f7e2da29
+		summarizeBy: none
+		sourceColumn: location_name
+
+	column location_type
+		dataType: string
+		lineageTag: 45fa80d3-7273-4fda-82fd-e28dbe3ed630
+		summarizeBy: none
+		sourceColumn: location_type
+
+	column voivodeship
+		dataType: string
+		lineageTag: 223df739-f044-4885-9be8-f97d53377d1b
+		dataCategory: StateOrProvince
+		summarizeBy: none
+		sourceColumn: voivodeship
+
+	partition 'Reporting Location' = m
+		mode: import
+		source =
+				let
+				    Server = DatabaseServer & ":" & Text.From(DatabasePort),
+				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT location_key, location_id, location_name, location_type, voivodeship FROM layer_gold.dim_reporting_location", null, [EnableFolding=true])
+				in
+				    Source
+
+	annotation PBI_ResultType = Table

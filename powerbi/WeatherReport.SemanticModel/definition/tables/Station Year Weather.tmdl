@@ -1,0 +1,167 @@
+table 'Station Year Weather'
+	lineageTag: a52feb34-4de0-437b-802c-11a4e2189ac3
+
+	column station_key
+		dataType: int64
+		isHidden
+		lineageTag: 5c95d585-55e4-449a-bbfb-36d7f26e3119
+		summarizeBy: none
+		sourceColumn: station_key
+
+	column year
+		dataType: int64
+		lineageTag: ea65dbc4-c6a6-41ae-9c8a-754a91a6d436
+		summarizeBy: none
+		sourceColumn: year
+
+	column expected_days
+		dataType: int64
+		lineageTag: 137f47e4-e128-4e67-925b-7018e1f1a45f
+		summarizeBy: none
+		sourceColumn: expected_days
+
+	column observation_days
+		dataType: int64
+		lineageTag: 7ff19bff-f1b4-40e7-84fe-b09f43365dee
+		summarizeBy: none
+		sourceColumn: observation_days
+
+	column avg_temperature_coverage
+		dataType: decimal
+		formatString: 0.0%
+		lineageTag: 829fa4de-d10a-4877-afc2-4b5974ad034a
+		summarizeBy: none
+		sourceColumn: avg_temperature_coverage
+
+	column max_temperature_coverage
+		dataType: decimal
+		formatString: 0.0%
+		lineageTag: ef7928b1-2e91-4b1b-87bf-c1db4d651bc1
+		summarizeBy: none
+		sourceColumn: max_temperature_coverage
+
+	column min_temperature_coverage
+		dataType: decimal
+		formatString: 0.0%
+		lineageTag: 7112df79-ab47-4480-aa4a-c0b465b4a32a
+		summarizeBy: none
+		sourceColumn: min_temperature_coverage
+
+	column precipitation_coverage
+		dataType: decimal
+		formatString: 0.0%
+		lineageTag: 3b6fcf53-0a9c-4b97-a51b-e5113fc8968a
+		summarizeBy: none
+		sourceColumn: precipitation_coverage
+
+	column snow_cover_coverage
+		dataType: decimal
+		formatString: 0.0%
+		lineageTag: e641a665-461e-4226-9a37-a64750ada368
+		summarizeBy: none
+		sourceColumn: snow_cover_coverage
+
+	column is_complete_year
+		dataType: boolean
+		lineageTag: a202c908-7f1f-40de-9997-96ce369d572e
+		summarizeBy: none
+		sourceColumn: is_complete_year
+
+	column is_avg_temperature_reportable
+		dataType: boolean
+		lineageTag: 87d81154-e255-4be1-b0f8-d168741f80cb
+		summarizeBy: none
+		sourceColumn: is_avg_temperature_reportable
+
+	column is_max_temperature_reportable
+		dataType: boolean
+		lineageTag: 27c70cc3-a038-4163-94bc-f4b68297b25d
+		summarizeBy: none
+		sourceColumn: is_max_temperature_reportable
+
+	column is_min_temperature_reportable
+		dataType: boolean
+		lineageTag: 45776b15-715e-40c3-b9e1-dac5c81c756b
+		summarizeBy: none
+		sourceColumn: is_min_temperature_reportable
+
+	column is_precipitation_reportable
+		dataType: boolean
+		lineageTag: 9065fd26-6d28-4f32-a01a-9bc4052eb9ee
+		summarizeBy: none
+		sourceColumn: is_precipitation_reportable
+
+	column is_snow_cover_reportable
+		dataType: boolean
+		lineageTag: 89dec109-897c-4f5c-a1c7-c4b65fa3360a
+		summarizeBy: none
+		sourceColumn: is_snow_cover_reportable
+
+	column annual_avg_air_temperature_c
+		dataType: double
+		formatString: 0.0
+		lineageTag: f1cfa87a-58df-45fa-8d07-936f57fd7c85
+		summarizeBy: none
+		sourceColumn: annual_avg_air_temperature_c
+
+	column annual_max_air_temperature_c
+		dataType: double
+		formatString: 0.0
+		lineageTag: bb8a59bc-c229-4a6b-9efd-756ff6167971
+		summarizeBy: none
+		sourceColumn: annual_max_air_temperature_c
+
+	column annual_min_air_temperature_c
+		dataType: double
+		formatString: 0.0
+		lineageTag: ac60a14a-298b-47a3-9ba8-324b8eb9ce98
+		summarizeBy: none
+		sourceColumn: annual_min_air_temperature_c
+
+	column annual_precipitation_total_mm
+		dataType: double
+		formatString: 0.0
+		lineageTag: 983d483e-3da8-48cf-89d7-93f0d9adc631
+		summarizeBy: none
+		sourceColumn: annual_precipitation_total_mm
+
+	column hot_days_ge_30_c
+		dataType: int64
+		lineageTag: 38ca74c0-8eb3-41a6-a9c2-6fc1da227cb0
+		summarizeBy: none
+		sourceColumn: hot_days_ge_30_c
+
+	column very_hot_days_ge_35_c
+		dataType: int64
+		lineageTag: 1bd3d345-576e-4620-a9e0-a2d67e12299b
+		summarizeBy: none
+		sourceColumn: very_hot_days_ge_35_c
+
+	column cold_nights_le_minus_20_c
+		dataType: int64
+		lineageTag: b47836ec-9990-45e5-99b6-02003b519378
+		summarizeBy: none
+		sourceColumn: cold_nights_le_minus_20_c
+
+	column very_cold_nights_le_minus_25_c
+		dataType: int64
+		lineageTag: 2bf406b7-7896-4c05-b632-b98a99f01852
+		summarizeBy: none
+		sourceColumn: very_cold_nights_le_minus_25_c
+
+	column snow_cover_days
+		dataType: int64
+		lineageTag: 65e478a3-f304-407c-bb2a-963a7c880085
+		summarizeBy: none
+		sourceColumn: snow_cover_days
+
+	partition 'Station Year Weather' = m
+		mode: import
+		source =
+				let
+				    Server = DatabaseServer & ":" & Text.From(DatabasePort),
+				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT station_key, year, expected_days, observation_days, avg_temperature_coverage, max_temperature_coverage, min_temperature_coverage, precipitation_coverage, snow_cover_coverage, is_complete_year, is_avg_temperature_reportable, is_max_temperature_reportable, is_min_temperature_reportable, is_precipitation_reportable, is_snow_cover_reportable, annual_avg_air_temperature_c, annual_max_air_temperature_c, annual_min_air_temperature_c, annual_precipitation_total_mm, hot_days_ge_30_c, very_hot_days_ge_35_c, cold_nights_le_minus_20_c, very_cold_nights_le_minus_25_c, snow_cover_days FROM layer_gold.fact_weather_station_year", null, [EnableFolding=true])
+				in
+				    Source
+
+	annotation PBI_ResultType = Table
