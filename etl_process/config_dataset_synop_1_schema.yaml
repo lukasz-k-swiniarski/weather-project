@@ -1,17 +1,30 @@
 synop_s_d_imgw:
   prefix: s_d_
+  required: true
+  expected_column_count: 65
+  grain: [nsp, rok, mc, dz]
+  contract_version: "2026-01-29"
   schema:
-    source: url
-    path: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_nag%c5%82%c3%b3wek.csv
     encoding: cp1250
-    col_mapp: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_format.txt
-    col_mapp_encoding: cp1250
+    columns: [nsp, post, rok, mc, dz, tmax, wtmax, tmin, wtmin, std, wstd,
+      tmng, wtmng, smdb, wsmdb, roop, pksn, wpksn, rwsn, wrwsn, usl, wusl,
+      desz, wdesz, sneg, wsneg, disn, wdisn, grad, wgrad, mgla, wmgla, zmgl,
+      wzmgl, sadz, wsadz, golo, wgolo, zmni, wzmni, zmws, wzmws, zmet, wzmet,
+      ff10, wff10, ff15, wff15, brza, wbrza, rosa, wrosa, szro, wszro, dzps,
+      wdzps, dzbl, wdzbl, sgr, izd, wizd, izg, wizg, aktn, waktn]
+    header_url: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_nag%c5%82%c3%b3wek.csv
+    format_url: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_format.txt
 
 synop_s_d_t_imgw:
   prefix: s_d_t_
+  required: true
+  expected_column_count: 23
+  grain: [nsp, rok, mc, dz]
+  key_subset_of: synop_s_d_imgw
+  contract_version: "2026-01-29"
   schema:
-    source: url
-    path: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_t_nag%c5%82%c3%b3wek.csv
     encoding: cp1250
-    col_mapp: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_t_format.txt
-    col_mapp_encoding: cp1250
+    columns: [nsp, post, rok, mc, dz, nos, wnos, fws, wfws, temp, wtemp, cpw,
+      wcpw, wlgs, wwlgs, ppps, wppps, pppm, wpppm, wodz, wwodz, wono, wwono]
+    header_url: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_t_nag%c5%82%c3%b3wek.csv
+    format_url: https://danepubliczne.imgw.pl/data/dane_pomiarowo_obserwacyjne/dane_meteorologiczne/dobowe/synop/s_d_t_format.txt
