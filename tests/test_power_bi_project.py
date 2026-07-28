@@ -46,6 +46,25 @@ def test_power_bi_model_has_conformed_dimensions_and_facts():
     assert "annual_to_location" not in relationships
 
 
+def test_power_bi_metrics_use_explicit_quality_aware_definitions():
+    metrics = (MODEL_DIR / "tables" / "Metrics.tmdl").read_text(encoding="utf-8")
+    daily_fact = (MODEL_DIR / "tables" / "Daily Weather.tmdl").read_text(
+        encoding="utf-8"
+    )
+    annual_fact = (MODEL_DIR / "tables" / "Station Year Weather.tmdl").read_text(
+        encoding="utf-8"
+    )
+
+    assert (
+        "DIVIDE([Temperature Reportable Station-Years], [Complete Station-Years])"
+        in metrics
+    )
+    assert "SUM('Station Year Weather'[avg_temperature_days])" in metrics
+    assert "SUM('Station Year Weather'[precipitation_days])" in metrics
+    assert "\n\tisHidden\n" in daily_fact
+    assert "\n\tisHidden\n" in annual_fact
+
+
 def test_power_bi_report_pages_and_references_are_valid():
     pages = json.loads((REPORT_DIR / "pages" / "pages.json").read_text(encoding="utf-8"))
     assert pages["pageOrder"] == [
@@ -75,3 +94,6 @@ def test_power_bi_report_pages_and_references_are_valid():
     )
     assert "polish_clities_synop_data" not in versioned_text
     assert "station_year_observstion_count" not in versioned_text
+    assert "Celcius" not in versioned_text
+    assert "Temperature (°C)" in versioned_text
+    assert "Coverage (%)" in versioned_text

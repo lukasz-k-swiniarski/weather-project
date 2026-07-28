@@ -168,7 +168,7 @@
             "titleText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Temperature (Celcius)'"
+                  "Value": "'Coverage (%)'"
                 }
               }
             },
@@ -483,7 +483,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Metric Coverage by Year'"
+                  "Value": "'Temperature and Precipitation Coverage by Year'"
                 }
               }
             }

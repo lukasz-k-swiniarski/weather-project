@@ -168,7 +168,7 @@
             "titleText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Temperature (Celcius)'"
+                  "Value": "'Temperature (°C)'"
                 }
               }
             },
