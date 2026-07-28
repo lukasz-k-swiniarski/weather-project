@@ -1,0 +1,60 @@
+table Date
+	lineageTag: b2044116-0e01-4260-92ce-a56e32be8dce
+	dataCategory: Time
+
+	column date_key
+		dataType: int64
+		isHidden
+		isKey
+		lineageTag: 8189b9b6-fea0-419a-8792-424c8525b238
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column full_date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 84fa6c56-743d-4c4f-acb4-f87e7ef37a0c
+		summarizeBy: none
+		sourceColumn: full_date
+
+	column year
+		dataType: int64
+		lineageTag: e6375769-343e-4b5a-b211-e1e2dbe63f48
+		summarizeBy: none
+		sourceColumn: year
+
+	column quarter
+		dataType: int64
+		lineageTag: 9ca1cea3-62fd-4224-bbce-1a6b2b6d4a37
+		summarizeBy: none
+		sourceColumn: quarter
+
+	column month
+		dataType: int64
+		lineageTag: 7aa198d8-9283-490a-bcb9-1105f66234c7
+		summarizeBy: none
+		sourceColumn: month
+
+	column month_name
+		dataType: string
+		lineageTag: 85d0d9f1-473a-4930-b73a-6c4ba179e851
+		summarizeBy: none
+		sourceColumn: month_name
+		sortByColumn: month
+
+	column day
+		dataType: int64
+		lineageTag: b10bddd5-4a3f-4d11-b0c4-afe9f49a99de
+		summarizeBy: none
+		sourceColumn: day
+
+	partition Date = m
+		mode: import
+		source =
+				let
+				    Server = DatabaseServer & ":" & Text.From(DatabasePort),
+				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT date_key, full_date, year, quarter, month, month_name, day FROM layer_gold.dim_date", null, [EnableFolding=true])
+				in
+				    Source
+
+	annotation PBI_ResultType = Table

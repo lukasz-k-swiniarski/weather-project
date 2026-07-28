@@ -18,7 +18,7 @@ IMGW website
 versioned station reference data
     -> SQL procedures
     -> layer_silver.weather_daily
-    -> layer_gold dimensions
+    -> layer_gold conformed date, year, station and reporting-location dimensions
     -> layer_gold.fact_weather_daily + layer_gold.fact_weather_station_year
 ```
 
@@ -87,6 +87,13 @@ pytest
 ```
 
 The same checks run automatically in GitHub Actions.
+
+## Power BI
+
+The version-controlled Power BI Project is available at `powerbi/WeatherReport.pbip`.
+It connects only to curated Gold-layer tables and uses configurable PostgreSQL server,
+port and database parameters. See [docs/power-bi-report.md](docs/power-bi-report.md)
+for the semantic-model contract and refresh instructions.
 
 ## Database notes and current scope
 

@@ -1,0 +1,23 @@
+model Model
+	culture: pl-PL
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: pl-PL
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["Year","Date","Reporting Location","Station","Daily Weather","Station Year Weather"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Year
+ref table Date
+ref table 'Reporting Location'
+ref table Station
+ref table 'Daily Weather'
+ref table 'Station Year Weather'
+ref table Metrics
+
+ref cultureInfo pl-PL

@@ -244,6 +244,15 @@ CREATE TABLE layer_silver.weather_daily (
 CREATE INDEX weather_daily_observation_date_idx
     ON layer_silver.weather_daily (observation_date);
 
+-- Conformed year dimension shared by daily and annual facts.
+CREATE TABLE layer_gold.dim_year (
+    year smallint PRIMARY KEY,
+    expected_days smallint NOT NULL,
+    is_leap_year boolean NOT NULL,
+    is_complete_year boolean NOT NULL,
+    CONSTRAINT dim_year_expected_days_ck CHECK (expected_days IN (365, 366))
+);
+
 -- Conformed date dimension for Power BI.
 CREATE TABLE layer_gold.dim_date (
     date_key integer PRIMARY KEY,
@@ -255,7 +264,18 @@ CREATE TABLE layer_gold.dim_date (
     day smallint NOT NULL,
     day_of_year smallint NOT NULL,
     days_in_year smallint NOT NULL,
-    is_leap_year boolean NOT NULL
+    is_leap_year boolean NOT NULL,
+    CONSTRAINT dim_date_year_fk
+        FOREIGN KEY (year) REFERENCES layer_gold.dim_year (year)
+);
+
+-- Stable reporting geography shared by daily and annual BI metrics.
+CREATE TABLE layer_gold.dim_reporting_location (
+    location_key bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    location_id text NOT NULL UNIQUE,
+    location_name text NOT NULL,
+    location_type text NOT NULL,
+    voivodeship text NOT NULL
 );
 
 -- SCD Type 2: one row per IMGW station code and metadata validity period.
@@ -268,26 +288,17 @@ CREATE TABLE layer_gold.dim_station (
     is_current boolean NOT NULL,
     station_type text,
     data_rank text,
-    location_id text NOT NULL,
-    location_name text NOT NULL,
-    location_type text NOT NULL,
-    voivodeship text NOT NULL,
+    location_key bigint NOT NULL,
     latitude double precision,
     longitude double precision,
     elevation_m double precision,
     metadata_status text NOT NULL,
     CONSTRAINT dim_station_version_uk UNIQUE (station_code, valid_from),
     CONSTRAINT dim_station_period_ck
-        CHECK (valid_to IS NULL OR valid_to >= valid_from)
-);
-
--- Stable reporting geography shared by annual BI metrics.
-CREATE TABLE layer_gold.dim_reporting_location (
-    location_key bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    location_id text NOT NULL UNIQUE,
-    location_name text NOT NULL,
-    location_type text NOT NULL,
-    voivodeship text NOT NULL
+        CHECK (valid_to IS NULL OR valid_to >= valid_from),
+    CONSTRAINT dim_station_location_fk
+        FOREIGN KEY (location_key)
+        REFERENCES layer_gold.dim_reporting_location (location_key)
 );
 
 -- One row per station and observation day. Descriptive attributes live in dimensions.
@@ -343,12 +354,11 @@ CREATE TABLE layer_gold.fact_weather_daily (
 CREATE INDEX fact_weather_daily_station_date_idx
     ON layer_gold.fact_weather_daily (station_key, date_key);
 
--- One row per physical IMGW station code and calendar year.
+-- One row per station dimension version and calendar year.
 -- Annual metrics are NULL unless their own source measure meets the reporting contract.
 CREATE TABLE layer_gold.fact_weather_station_year (
-    station_code bigint NOT NULL,
+    station_key bigint NOT NULL,
     year smallint NOT NULL,
-    location_key bigint NOT NULL,
     expected_days smallint NOT NULL,
     observation_days smallint NOT NULL,
     avg_temperature_days smallint NOT NULL,
@@ -376,10 +386,11 @@ CREATE TABLE layer_gold.fact_weather_station_year (
     cold_nights_le_minus_20_c smallint,
     very_cold_nights_le_minus_25_c smallint,
     snow_cover_days smallint,
-    CONSTRAINT fact_weather_station_year_pk PRIMARY KEY (station_code, year),
-    CONSTRAINT fact_weather_station_year_location_fk
-        FOREIGN KEY (location_key)
-        REFERENCES layer_gold.dim_reporting_location (location_key),
+    CONSTRAINT fact_weather_station_year_pk PRIMARY KEY (station_key, year),
+    CONSTRAINT fact_weather_station_year_station_fk
+        FOREIGN KEY (station_key) REFERENCES layer_gold.dim_station (station_key),
+    CONSTRAINT fact_weather_station_year_year_fk
+        FOREIGN KEY (year) REFERENCES layer_gold.dim_year (year),
     CONSTRAINT fact_weather_station_year_expected_days_ck
         CHECK (expected_days IN (365, 366)),
     CONSTRAINT fact_weather_station_year_day_counts_ck CHECK (
@@ -399,8 +410,8 @@ CREATE TABLE layer_gold.fact_weather_station_year (
     )
 );
 
-CREATE INDEX fact_weather_station_year_location_year_idx
-    ON layer_gold.fact_weather_station_year (location_key, year);
+CREATE INDEX fact_weather_station_year_year_idx
+    ON layer_gold.fact_weather_station_year (year);
 
 CREATE PROCEDURE layer_silver.refresh()
 LANGUAGE plpgsql
@@ -565,10 +576,30 @@ BEGIN
     TRUNCATE TABLE
         layer_gold.fact_weather_station_year,
         layer_gold.fact_weather_daily,
-        layer_gold.dim_reporting_location,
         layer_gold.dim_date,
-        layer_gold.dim_station
+        layer_gold.dim_station,
+        layer_gold.dim_reporting_location,
+        layer_gold.dim_year
     RESTART IDENTITY;
+
+    INSERT INTO layer_gold.dim_year (
+        year, expected_days, is_leap_year, is_complete_year
+    )
+    SELECT
+        calendar_year::smallint,
+        (
+            make_date(calendar_year + 1, 1, 1)
+            - make_date(calendar_year, 1, 1)
+        )::smallint,
+        (
+            make_date(calendar_year + 1, 1, 1)
+            - make_date(calendar_year, 1, 1)
+        ) = 366,
+        make_date(calendar_year + 1, 1, 1) - 1 <= last_date
+    FROM generate_series(
+        extract(year FROM first_date)::integer,
+        extract(year FROM last_date)::integer
+    ) AS years(calendar_year);
 
     INSERT INTO layer_gold.dim_date (
         date_key, full_date, year, quarter, month, month_name, day,
@@ -611,8 +642,8 @@ BEGIN
 
     INSERT INTO layer_gold.dim_station (
         station_code, official_station_name, valid_from, valid_to, is_current,
-        station_type, data_rank, location_id, location_name, location_type,
-        voivodeship, latitude, longitude, elevation_m, metadata_status
+        station_type, data_rank, location_key,
+        latitude, longitude, elevation_m, metadata_status
     )
     SELECT
         metadata.station_code,
@@ -622,10 +653,7 @@ BEGIN
         metadata.valid_to IS NULL,
         metadata.station_type,
         metadata.data_rank,
-        code_location.location_id,
-        location.location_name,
-        location.location_type,
-        location.voivodeship,
+        location.location_key,
         metadata.latitude,
         metadata.longitude,
         metadata.elevation_m,
@@ -637,7 +665,7 @@ BEGIN
         GROUP BY alias.station_code
     ) AS code_location
         ON code_location.station_code = metadata.station_code
-    JOIN layer_silver.station_reporting_location AS location
+    JOIN layer_gold.dim_reporting_location AS location
         ON location.location_id = code_location.location_id
     ORDER BY metadata.station_code, metadata.valid_from;
 
@@ -712,7 +740,7 @@ BEGIN
        );
 
     INSERT INTO layer_gold.fact_weather_station_year (
-        station_code, year, location_key, expected_days, observation_days,
+        station_key, year, expected_days, observation_days,
         avg_temperature_days, max_temperature_days, min_temperature_days,
         precipitation_days, snow_cover_status_days,
         avg_temperature_coverage, max_temperature_coverage,
@@ -727,12 +755,7 @@ BEGIN
         cold_nights_le_minus_20_c, very_cold_nights_le_minus_25_c,
         snow_cover_days
     )
-    WITH station_location AS (
-        SELECT alias.station_code, min(alias.location_id) AS location_id
-        FROM layer_silver.station_alias AS alias
-        GROUP BY alias.station_code
-    ),
-    station_year AS (
+    WITH station_year AS (
         SELECT
             weather.station_code,
             extract(year FROM weather.observation_date)::smallint AS year,
@@ -785,9 +808,8 @@ BEGIN
         FROM station_year
     )
     SELECT
-        quality.station_code,
+        station.station_key,
         quality.year,
-        location.location_key,
         quality.expected_days,
         quality.observation_days,
         quality.avg_temperature_days,
@@ -843,10 +865,13 @@ BEGIN
             THEN quality.raw_snow_cover_days
         END
     FROM quality
-    JOIN station_location
-        ON station_location.station_code = quality.station_code
-    JOIN layer_gold.dim_reporting_location AS location
-        ON location.location_id = station_location.location_id;
+    JOIN layer_gold.dim_station AS station
+        ON station.station_code = quality.station_code
+       AND make_date(quality.year, 1, 1) >= station.valid_from
+       AND (
+            station.valid_to IS NULL
+            OR make_date(quality.year, 1, 1) <= station.valid_to
+       );
 END;
 $$;
 

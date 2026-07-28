@@ -51,16 +51,21 @@ as daytime and nighttime source measures but are not assumed to sum to `SMDB`.
 Gold is a star schema designed for Power BI:
 
 - `layer_gold.dim_date` contains one row per calendar date;
+- `layer_gold.dim_year` contains one row per calendar year and identifies incomplete years;
 - `layer_gold.dim_station` is an SCD Type 2 dimension with one row per station code and
   metadata validity period;
 - `layer_gold.dim_reporting_location` contains one row per stable BI reporting location;
 - `layer_gold.fact_weather_daily` contains one row per station and observation date.
-- `layer_gold.fact_weather_station_year` contains one row per station code and calendar year.
+- `layer_gold.fact_weather_station_year` contains one row per station dimension version and
+  calendar year.
 
-The fact table stores foreign keys and measurements only. Each observation joins to exactly one
-station version through its station code and observation date. Official station names,
-coordinates, elevation, reporting locations and voivodeships belong to `dim_station` and are not
-repeated across daily observations.
+The fact tables store foreign keys and measurements only. Each daily observation joins to exactly
+one station version through its station code and observation date. Official station names,
+coordinates and elevation belong to `dim_station`. Stable reporting locations and voivodeships
+belong to the conformed `dim_reporting_location`, which filters both daily and annual facts.
+
+`dim_year` filters `dim_date` and the annual fact. This avoids a many-to-many relationship between
+daily dates and station-year rows in the Power BI semantic model.
 
 `metadata_status` distinguishes official IMGW versions from explicit `unavailable` coverage
 periods. Unavailable periods retain reporting geography but never infer coordinates or elevation.
