@@ -364,7 +364,7 @@ CREATE TABLE layer_gold.fact_weather_station_year (
     avg_temperature_days smallint NOT NULL,
     max_temperature_days smallint NOT NULL,
     min_temperature_days smallint NOT NULL,
-    precipitation_days smallint NOT NULL,
+    precipitation_observed_days smallint NOT NULL,
     snow_cover_status_days smallint NOT NULL,
     avg_temperature_coverage numeric(6, 5) NOT NULL,
     max_temperature_coverage numeric(6, 5) NOT NULL,
@@ -398,7 +398,7 @@ CREATE TABLE layer_gold.fact_weather_station_year (
         AND avg_temperature_days BETWEEN 0 AND expected_days
         AND max_temperature_days BETWEEN 0 AND expected_days
         AND min_temperature_days BETWEEN 0 AND expected_days
-        AND precipitation_days BETWEEN 0 AND expected_days
+        AND precipitation_observed_days BETWEEN 0 AND expected_days
         AND snow_cover_status_days BETWEEN 0 AND expected_days
     ),
     CONSTRAINT fact_weather_station_year_coverage_ck CHECK (
@@ -469,7 +469,12 @@ BEGIN
         CASE WHEN source.wtmin = 8 THEN NULL ELSE source.tmin END, source.wtmin,
         CASE WHEN source.wstd = 8 THEN NULL ELSE source.std END, source.wstd,
         CASE WHEN source.wtmng = 8 THEN NULL ELSE source.tmng END, source.wtmng,
-        CASE WHEN source.wsmdb = 8 THEN NULL ELSE source.smdb END, source.wsmdb,
+        CASE
+            WHEN source.wsmdb = 8 THEN NULL
+            WHEN source.wsmdb = 9 THEN 0
+            ELSE source.smdb
+        END,
+        source.wsmdb,
         nullif(trim(source.roop), ''),
         CASE WHEN source.wpksn = 8 THEN NULL ELSE source.pksn END, source.wpksn,
         CASE WHEN source.wrwsn = 8 THEN NULL ELSE source.rwsn END, source.wrwsn,
@@ -742,7 +747,7 @@ BEGIN
     INSERT INTO layer_gold.fact_weather_station_year (
         station_key, year, expected_days, observation_days,
         avg_temperature_days, max_temperature_days, min_temperature_days,
-        precipitation_days, snow_cover_status_days,
+        precipitation_observed_days, snow_cover_status_days,
         avg_temperature_coverage, max_temperature_coverage,
         min_temperature_coverage, precipitation_coverage, snow_cover_coverage,
         is_complete_year,
@@ -767,7 +772,8 @@ BEGIN
             count(weather.avg_air_temperature_c)::smallint AS avg_temperature_days,
             count(weather.max_air_temperature_c)::smallint AS max_temperature_days,
             count(weather.min_air_temperature_c)::smallint AS min_temperature_days,
-            count(weather.precipitation_total_mm)::smallint AS precipitation_days,
+            count(weather.precipitation_total_mm)::smallint
+                AS precipitation_observed_days,
             count(weather.snow_cover_occurred)::smallint AS snow_cover_status_days,
             avg(weather.avg_air_temperature_c) AS raw_avg_air_temperature_c,
             max(weather.max_air_temperature_c) AS raw_max_air_temperature_c,
@@ -800,7 +806,7 @@ BEGIN
                 / station_year.expected_days AS max_temperature_coverage,
             station_year.min_temperature_days::numeric
                 / station_year.expected_days AS min_temperature_coverage,
-            station_year.precipitation_days::numeric
+            station_year.precipitation_observed_days::numeric
                 / station_year.expected_days AS precipitation_coverage,
             station_year.snow_cover_status_days::numeric
                 / station_year.expected_days AS snow_cover_coverage,
@@ -815,7 +821,7 @@ BEGIN
         quality.avg_temperature_days,
         quality.max_temperature_days,
         quality.min_temperature_days,
-        quality.precipitation_days,
+        quality.precipitation_observed_days,
         quality.snow_cover_status_days,
         quality.avg_temperature_coverage,
         quality.max_temperature_coverage,

@@ -68,6 +68,15 @@ def test_incomplete_annual_metrics_are_null_in_the_warehouse():
     assert "then quality.raw_precipitation_total_mm" in sql
 
 
+def test_silver_normalizes_precipitation_measurement_statuses():
+    sql = schema_sql()
+
+    assert "when source.wsmdb = 8 then null" in sql
+    assert "when source.wsmdb = 9 then 0" in sql
+    assert "precipitation_observed_days smallint not null" in sql
+    assert "station_year.precipitation_observed_days::numeric" in sql
+
+
 def test_schema_defines_versioned_station_reference_tables():
     sql = schema_sql()
 

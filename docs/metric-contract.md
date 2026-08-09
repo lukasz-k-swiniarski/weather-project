@@ -36,6 +36,9 @@ Completeness is evaluated independently for:
 A metric is reportable when the year is complete and at least 95% of its expected daily values
 are non-null. A row count cannot substitute for measure-specific completeness.
 
+`precipitation_observed_days` counts days with a known precipitation total, including
+explicit dry days normalized to `0 mm`. It does not mean the number of rainy days.
+
 Annual metric columns are set to `NULL` when their contract is not met. This makes an incomplete
 annual result unavailable by default instead of relying on a hidden report filter.
 
