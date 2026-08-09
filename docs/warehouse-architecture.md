@@ -13,6 +13,11 @@ Column names and measurement statuses remain faithful to IMGW. Bronze tables are
 objects: a load truncates and repopulates them inside a database transaction instead of dropping
 and recreating them through pandas.
 
+The two Bronze tables form one full source snapshot. Python validates and parses every required
+archive before replacing either table, then truncates and inserts both tables in one transaction.
+Any failed download, corrupt ZIP, extraction failure or missing required dataset aborts the run;
+the previous Bronze snapshot remains available.
+
 ### Silver
 
 `layer_silver.weather_daily` has one row per:
@@ -88,6 +93,10 @@ coverage. See [BI metric contract](metric-contract.md) for metric formulas and a
 
 Refresh procedures use stable tables with `TRUNCATE` and `INSERT`. Exceptions propagate to the
 Python pipeline so a failed refresh can be reported as a failed ETL run.
+
+Downloads are first written to a temporary file, validated as ZIP archives and atomically renamed.
+Extraction uses a temporary directory and a completion marker, so a partial cache is never reused.
+Crawler recursion is restricted to the configured IMGW origin and dataset path.
 
 Gold refresh refuses to run when:
 

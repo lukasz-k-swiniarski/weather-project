@@ -30,6 +30,9 @@ versioned station reference data
 
 The first full run downloads a large historical dataset and may take considerable time. The
 downloaded files are stored under `data/` and are intentionally excluded from Git.
+Validated downloads and completed extractions are reused on later runs. A corrupt or incomplete
+cache is rebuilt automatically, and any required archive failure stops publication of a new
+Bronze snapshot.
 
 ## Quick start
 
@@ -82,8 +85,8 @@ Dataset URLs, encodings and filename prefixes are defined in
 
 ```bash
 python -m pip install -r requirements-dev.txt
-ruff check .
-pytest
+python -m ruff check .
+python -m pytest
 ```
 
 The same checks run automatically in GitHub Actions.
