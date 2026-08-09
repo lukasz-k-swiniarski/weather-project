@@ -63,7 +63,7 @@ table Metrics
 		displayFolder: Snow
 		lineageTag: 15c12d33-b832-4a02-886f-657d3b8395df
 
-	measure 'Reporting Stations' = DISTINCTCOUNT('Station Year Weather'[station_key])
+	measure 'Reporting Stations' = DISTINCTCOUNT(Station[station_key])
 		formatString: 0
 		displayFolder: Data Quality
 		lineageTag: fc67a32d-e265-4997-a0da-d7513be866df

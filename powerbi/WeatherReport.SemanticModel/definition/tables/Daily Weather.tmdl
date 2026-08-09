@@ -16,6 +16,13 @@ table 'Daily Weather'
 		summarizeBy: none
 		sourceColumn: station_key
 
+	column station_version_key
+		dataType: int64
+		isHidden
+		lineageTag: d52d5e8a-7d2b-4e53-9a40-bf6b965f31f2
+		summarizeBy: none
+		sourceColumn: station_version_key
+
 	column max_air_temperature_c
 		dataType: double
 		formatString: 0.0
@@ -62,7 +69,7 @@ table 'Daily Weather'
 		source =
 				let
 				    Server = DatabaseServer & ":" & Text.From(DatabasePort),
-				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT date_key, station_key, max_air_temperature_c, min_air_temperature_c, avg_air_temperature_c, precipitation_total_mm, snow_depth_cm, snow_cover_occurred FROM layer_gold.fact_weather_daily", null, [EnableFolding=true])
+				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT date_key, station_key, station_version_key, max_air_temperature_c, min_air_temperature_c, avg_air_temperature_c, precipitation_total_mm, snow_depth_cm, snow_cover_occurred FROM layer_gold.fact_weather_daily", null, [EnableFolding=true])
 				in
 				    Source
 
