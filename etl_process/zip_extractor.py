@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -7,58 +8,72 @@ logger = logging.getLogger(__name__)
 
 
 class ZipExtractor:
-    def __init__(self, extract_dir: str = "data/extracted"):
-        self.extract_dir = extract_dir
-        os.makedirs(self.extract_dir, exist_ok=True)
+    COMPLETION_MARKER = ".extraction-complete"
 
-    def _get_extract_path(self, zip_path: str) -> str:
-        zip_name = os.path.splitext(os.path.basename(zip_path))[0]
-        return os.path.join(self.extract_dir, zip_name)
+    def __init__(self, extract_dir: str = "data/extracted"):
+        self.extract_dir = Path(extract_dir)
+        self.extract_dir.mkdir(parents=True, exist_ok=True)
+
+    def _get_extract_path(self, zip_path: str) -> Path:
+        return self.extract_dir / Path(zip_path).stem
 
     def extract(self, zip_path: str) -> list[str]:
         extract_path = self._get_extract_path(zip_path)
+        marker = extract_path / self.COMPLETION_MARKER
 
-        # idempotency – jeśli już rozpakowane
-        if os.path.exists(extract_path) and os.listdir(extract_path):
-            logger.info(f"Already extracted, skipping: {extract_path}")
-            return self._list_files(extract_path)
+        if marker.is_file():
+            files = self._list_files(extract_path)
+            if files:
+                logger.info("Validated extracted archive cache: %s", extract_path)
+                return files
+
+        temporary_path = extract_path.with_name(f"{extract_path.name}.extracting")
+        if temporary_path.exists():
+            shutil.rmtree(temporary_path)
+        temporary_path.mkdir(parents=True)
 
         try:
-            logger.info(f"Extracting {zip_path} → {extract_path}")
+            logger.info("Extracting %s -> %s", zip_path, extract_path)
+            with zipfile.ZipFile(zip_path, "r") as archive:
+                self._validate_members(archive, temporary_path)
+                invalid_member = archive.testzip()
+                if invalid_member is not None:
+                    raise zipfile.BadZipFile(
+                        f"Corrupt ZIP member {invalid_member!r} in {zip_path}"
+                    )
+                archive.extractall(temporary_path)
 
-            os.makedirs(extract_path, exist_ok=True)
+            files = self._list_files(temporary_path)
+            if not files:
+                raise ValueError(f"ZIP archive contains no files: {zip_path}")
 
-            with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                self._validate_members(zip_ref, extract_path)
-                zip_ref.extractall(extract_path)
+            (temporary_path / self.COMPLETION_MARKER).write_text(
+                "complete\n",
+                encoding="utf-8",
+            )
+            if extract_path.exists():
+                shutil.rmtree(extract_path)
+            os.replace(temporary_path, extract_path)
 
             files = self._list_files(extract_path)
-
-            logger.info(f"Extracted {len(files)} files")
+            logger.info("Extracted %s files", len(files))
             return files
-
-        except zipfile.BadZipFile:
-            logger.error(f"Invalid ZIP file: {zip_path}")
-            raise
-
-        except Exception as e:
-            logger.error(f"Extraction failed: {e}")
+        except Exception:
+            shutil.rmtree(temporary_path, ignore_errors=True)
+            logger.exception("Extraction failed for %s", zip_path)
             raise
 
     @staticmethod
-    def _validate_members(zip_ref: zipfile.ZipFile, extract_path: str) -> None:
-        target_dir = Path(extract_path).resolve()
-
-        for member in zip_ref.infolist():
+    def _validate_members(archive: zipfile.ZipFile, extract_path: Path) -> None:
+        target_dir = extract_path.resolve()
+        for member in archive.infolist():
             member_path = (target_dir / member.filename).resolve()
             if target_dir != member_path and target_dir not in member_path.parents:
                 raise ValueError(f"Unsafe path in ZIP archive: {member.filename}")
 
-    def _list_files(self, directory: str) -> list[str]:
-        file_paths = []
-
-        for root, _, files in os.walk(directory):
-            for file in files:
-                file_paths.append(os.path.join(root, file))
-
-        return file_paths
+    def _list_files(self, directory: Path) -> list[str]:
+        return sorted(
+            str(path)
+            for path in directory.rglob("*")
+            if path.is_file() and path.name != self.COMPLETION_MARKER
+        )

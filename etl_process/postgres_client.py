@@ -5,6 +5,7 @@ from sqlalchemy import URL, create_engine, text
 
 logger = logging.getLogger(__name__)
 
+
 class PostgresClient:
     def __init__(self, host, port, dbname, user, password, schema, chunksize):
         self.host = host
@@ -42,6 +43,14 @@ class PostgresClient:
             table_name,
             schema=self.schema,
         )
+
+    def upload_dataframes(self, tables: dict[str, pd.DataFrame]) -> None:
+        normalized_tables = {}
+        for table_name, dataframe in tables.items():
+            normalized = dataframe.copy()
+            normalized.columns = normalized.columns.str.lower().str.replace(' ', '_')
+            normalized_tables[table_name] = normalized
+        self.replace_tables_data(normalized_tables, schema=self.schema)
 
     def replace_table_data(
         self,
