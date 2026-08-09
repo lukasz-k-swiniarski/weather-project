@@ -41,6 +41,19 @@ are non-null. A row count cannot substitute for measure-specific completeness.
 `precipitation_observed_days` counts days with a known precipitation total, including
 explicit dry days normalized to `0 mm`. It does not mean the number of rainy days.
 
+`snow_cover_observed_days` counts days where snow-cover occurrence is analytically known. A
+known `false` is an observed day without snow and is part of coverage; `NULL` means the occurrence
+cannot be established. The analytical value uses this precedence:
+
+1. valid source occurrence (`0` or `1`);
+2. positive valid snow depth as `true`;
+3. zero valid depth or depth status `9` as `false`;
+4. otherwise `NULL`.
+
+Occurrence status `8` is never inferred from depth. Daily rows retain
+`snow_cover_occurred_source` and `snow_cover_occurrence_provenance` so an inferred value is never
+presented as a direct source observation.
+
 Annual metric columns are set to `NULL` when their contract is not met. This makes an incomplete
 annual result unavailable by default instead of relying on a hidden report filter.
 
@@ -66,7 +79,7 @@ failure.
 | Very hot days | count of days with maximum temperature `>= 35°C` | maximum-temperature coverage |
 | Cold nights | count of days with minimum temperature `<= -20°C` | minimum-temperature coverage |
 | Very cold nights | count of days with minimum temperature `<= -25°C` | minimum-temperature coverage |
-| Snow-cover days | count of days where snow-cover occurrence is true | snow-cover-status coverage |
+| Snow-cover days | count of days where analytical snow-cover occurrence is true | snow-cover occurrence coverage |
 
 Temperature comparisons are inclusive. Cold metrics intentionally use daily minimum temperature;
 using daily maximum temperature would describe a different and much rarer phenomenon.

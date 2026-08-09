@@ -94,6 +94,20 @@ def test_silver_normalizes_precipitation_measurement_statuses():
     assert "station_year.precipitation_observed_days::numeric" in sql
 
 
+def test_snow_occurrence_has_explicit_source_inference_and_provenance():
+    sql = schema_sql()
+
+    assert "snow_cover_occurred_source boolean" in sql
+    assert "snow_cover_occurrence_provenance text not null" in sql
+    assert "source.wdzps is distinct from 8 and source.dzps in (0, 1)" in sql
+    assert "when source.wdzps = 8 then null" in sql
+    assert "when source.wpksn = 8 then null" in sql
+    assert "when source.pksn > 0 then true" in sql
+    assert "when source.pksn = 0 or source.wpksn = 9 then false" in sql
+    assert "snow_cover_observed_days smallint not null" in sql
+    assert "station_year.snow_cover_observed_days::numeric" in sql
+
+
 def test_schema_defines_versioned_station_reference_tables():
     sql = schema_sql()
 

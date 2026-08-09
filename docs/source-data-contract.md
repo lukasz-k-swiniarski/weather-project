@@ -83,6 +83,11 @@ Official format:
 | `izg` | `wizg` | Upper isotherm | cm |
 | `aktn` | `waktn` | Actinometry | J/cm² |
 
+Gold reporting does not silently treat a missing `dzps` value as a day without snow. Silver keeps
+the source occurrence and derives a separate analytical occurrence using valid snow depth as a
+fallback. The derivation and its provenance are documented in
+[BI metric contract](metric-contract.md).
+
 ## Dataset `s_d_t`
 
 Expected columns: 23.
