@@ -63,6 +63,29 @@ table Metrics
 		displayFolder: Snow
 		lineageTag: 15c12d33-b832-4a02-886f-657d3b8395df
 
+	measure 'Snow Reportable Station-Years' =
+			CALCULATE(
+			    COUNTROWS('Station Year Weather'),
+			    'Station Year Weather'[is_snow_cover_reportable] = TRUE()
+			)
+		formatString: 0
+		displayFolder: Data Quality
+		lineageTag: 6255301b-7175-4513-bfdb-d218a4fc48a5
+
+	measure 'Snow Reporting Rate' = DIVIDE([Snow Reportable Station-Years], [Complete Station-Years])
+		formatString: 0.0%
+		displayFolder: Data Quality
+		lineageTag: f818dca3-2987-4e04-9bc5-1a37268a73ac
+
+	measure 'Average Snow Cover Coverage' =
+			DIVIDE(
+			    SUM('Station Year Weather'[snow_cover_observed_days]),
+			    SUM('Station Year Weather'[expected_days])
+			)
+		formatString: 0.0%
+		displayFolder: Data Quality
+		lineageTag: 9348f812-12cc-42fa-80cb-5455da3baf5b
+
 	measure 'Reporting Stations' = DISTINCTCOUNT(Station[station_key])
 		formatString: 0
 		displayFolder: Data Quality
