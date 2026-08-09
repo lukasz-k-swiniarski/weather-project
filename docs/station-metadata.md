@@ -49,18 +49,25 @@ the historical observation date.
 
 ## Dimensional behavior
 
-`layer_gold.dim_station` uses SCD Type 2 grain:
+`layer_gold.dim_station` has the stable entity grain:
+
+```text
+station_code
+```
+
+`layer_gold.dim_station_version` uses SCD Type 2 grain:
 
 ```text
 station_code + valid_from
 ```
 
-The daily fact joins a station version when:
+The daily fact stores both `station_key` and `station_version_key`. It joins a version when:
 
 ```text
 observation_date >= valid_from
 AND (valid_to IS NULL OR observation_date <= valid_to)
 ```
 
-The refresh fails unless every fact row matches exactly one version. This prevents silent gaps
-and ambiguous assignments.
+The annual fact references only the stable `station_key`, so a metadata or name change during a
+year cannot split, duplicate or drop a station-year. The refresh fails unless every daily fact row
+matches exactly one version. This prevents silent gaps and ambiguous assignments.

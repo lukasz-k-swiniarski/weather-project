@@ -13,6 +13,7 @@ def test_schema_defines_dimensional_gold_model():
     assert "create table layer_gold.dim_date" in sql
     assert "create table layer_gold.dim_year" in sql
     assert "create table layer_gold.dim_station" in sql
+    assert "create table layer_gold.dim_station_version" in sql
     assert "create table layer_gold.dim_reporting_location" in sql
     assert "create table layer_gold.fact_weather_daily" in sql
     assert "create table layer_gold.fact_weather_station_year" in sql
@@ -21,20 +22,35 @@ def test_schema_defines_dimensional_gold_model():
     assert "foreign key (station_key)" in sql
     assert "foreign key (year) references layer_gold.dim_year (year)" in sql
     assert "foreign key (location_key)" in sql
-    assert "unique (station_code, valid_from)" in sql
-    assert "weather.observation_date >= station_dimension.valid_from" in sql
+    assert "unique (station_key, valid_from)" in sql
+    assert "weather.observation_date >= station_version.valid_from" in sql
 
 
 def test_reporting_location_is_a_conformed_dimension():
     sql = schema_sql()
     station_definition = sql.split(
         "create table layer_gold.dim_station", maxsplit=1
-    )[1].split(");", maxsplit=1)[0]
+    )[1].split("create table layer_gold.dim_station_version", maxsplit=1)[0]
 
     assert "location_key bigint not null" in station_definition
     assert "location_name text" not in station_definition
     assert "location_type text" not in station_definition
     assert "voivodeship text" not in station_definition
+    assert "valid_from date" not in station_definition
+    assert "station_code bigint not null unique" in station_definition
+
+
+def test_station_entity_is_separate_from_scd_metadata_versions():
+    sql = schema_sql()
+    version_definition = sql.split(
+        "create table layer_gold.dim_station_version", maxsplit=1
+    )[1].split(");", maxsplit=1)[0]
+
+    assert "station_version_key bigint" in version_definition
+    assert "station_key bigint not null" in version_definition
+    assert "unique (station_key, valid_from)" in version_definition
+    assert "station_version_key bigint not null" in sql
+    assert "references layer_gold.dim_station_version" in sql
 
 
 def test_annual_fact_has_explicit_grain_and_quality_contract():
@@ -51,6 +67,7 @@ def test_annual_fact_has_explicit_grain_and_quality_contract():
     assert "min_temperature_coverage >= 0.95" in sql
     assert "precipitation_coverage >= 0.95" in sql
     assert "snow_cover_coverage >= 0.95" in sql
+    assert "on station.station_code = quality.station_code;" in sql
     assert "weather.max_air_temperature_c >= 30" in sql
     assert "weather.max_air_temperature_c >= 35" in sql
     assert "weather.min_air_temperature_c <= -20" in sql

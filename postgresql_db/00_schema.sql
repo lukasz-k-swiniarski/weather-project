@@ -278,9 +278,21 @@ CREATE TABLE layer_gold.dim_reporting_location (
     voivodeship text NOT NULL
 );
 
--- SCD Type 2: one row per IMGW station code and metadata validity period.
+-- Stable station entity: one row per physical IMGW station series.
 CREATE TABLE layer_gold.dim_station (
     station_key bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    station_code bigint NOT NULL UNIQUE,
+    station_name text NOT NULL,
+    location_key bigint NOT NULL,
+    CONSTRAINT dim_station_location_fk
+        FOREIGN KEY (location_key)
+        REFERENCES layer_gold.dim_reporting_location (location_key)
+);
+
+-- SCD Type 2: one row per station metadata validity period.
+CREATE TABLE layer_gold.dim_station_version (
+    station_version_key bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    station_key bigint NOT NULL,
     station_code bigint NOT NULL,
     official_station_name text,
     valid_from date NOT NULL,
@@ -288,23 +300,23 @@ CREATE TABLE layer_gold.dim_station (
     is_current boolean NOT NULL,
     station_type text,
     data_rank text,
-    location_key bigint NOT NULL,
     latitude double precision,
     longitude double precision,
     elevation_m double precision,
     metadata_status text NOT NULL,
-    CONSTRAINT dim_station_version_uk UNIQUE (station_code, valid_from),
+    CONSTRAINT dim_station_version_uk UNIQUE (station_key, valid_from),
     CONSTRAINT dim_station_period_ck
         CHECK (valid_to IS NULL OR valid_to >= valid_from),
-    CONSTRAINT dim_station_location_fk
-        FOREIGN KEY (location_key)
-        REFERENCES layer_gold.dim_reporting_location (location_key)
+    CONSTRAINT dim_station_version_station_fk
+        FOREIGN KEY (station_key) REFERENCES layer_gold.dim_station (station_key),
+    CONSTRAINT dim_station_version_code_uk UNIQUE (station_code, valid_from)
 );
 
 -- One row per station and observation day. Descriptive attributes live in dimensions.
 CREATE TABLE layer_gold.fact_weather_daily (
     date_key integer NOT NULL,
     station_key bigint NOT NULL,
+    station_version_key bigint NOT NULL,
     max_air_temperature_c double precision,
     min_air_temperature_c double precision,
     avg_air_temperature_c double precision,
@@ -348,13 +360,16 @@ CREATE TABLE layer_gold.fact_weather_daily (
     CONSTRAINT fact_weather_daily_date_fk
         FOREIGN KEY (date_key) REFERENCES layer_gold.dim_date (date_key),
     CONSTRAINT fact_weather_daily_station_fk
-        FOREIGN KEY (station_key) REFERENCES layer_gold.dim_station (station_key)
+        FOREIGN KEY (station_key) REFERENCES layer_gold.dim_station (station_key),
+    CONSTRAINT fact_weather_daily_station_version_fk
+        FOREIGN KEY (station_version_key)
+        REFERENCES layer_gold.dim_station_version (station_version_key)
 );
 
 CREATE INDEX fact_weather_daily_station_date_idx
     ON layer_gold.fact_weather_daily (station_key, date_key);
 
--- One row per station dimension version and calendar year.
+-- One row per stable station and calendar year.
 -- Annual metrics are NULL unless their own source measure meets the reporting contract.
 CREATE TABLE layer_gold.fact_weather_station_year (
     station_key bigint NOT NULL,
@@ -582,6 +597,7 @@ BEGIN
         layer_gold.fact_weather_station_year,
         layer_gold.fact_weather_daily,
         layer_gold.dim_date,
+        layer_gold.dim_station_version,
         layer_gold.dim_station,
         layer_gold.dim_reporting_location,
         layer_gold.dim_year
@@ -646,11 +662,31 @@ BEGIN
     ORDER BY location_id;
 
     INSERT INTO layer_gold.dim_station (
-        station_code, official_station_name, valid_from, valid_to, is_current,
-        station_type, data_rank, location_key,
+        station_code, station_name, location_key
+    )
+    SELECT
+        code_location.station_code,
+        code_location.station_name,
+        location.location_key
+    FROM (
+        SELECT
+            alias.station_code,
+            min(alias.location_id) AS location_id,
+            min(alias.station_name) AS station_name
+        FROM layer_silver.station_alias AS alias
+        GROUP BY alias.station_code
+    ) AS code_location
+    JOIN layer_gold.dim_reporting_location AS location
+        ON location.location_id = code_location.location_id
+    ORDER BY code_location.station_code;
+
+    INSERT INTO layer_gold.dim_station_version (
+        station_key, station_code, official_station_name,
+        valid_from, valid_to, is_current, station_type, data_rank,
         latitude, longitude, elevation_m, metadata_status
     )
     SELECT
+        station.station_key,
         metadata.station_code,
         metadata.official_station_name,
         metadata.valid_from,
@@ -658,24 +694,17 @@ BEGIN
         metadata.valid_to IS NULL,
         metadata.station_type,
         metadata.data_rank,
-        location.location_key,
         metadata.latitude,
         metadata.longitude,
         metadata.elevation_m,
         metadata.metadata_status
     FROM layer_silver.station_metadata_history AS metadata
-    JOIN (
-        SELECT alias.station_code, min(alias.location_id) AS location_id
-        FROM layer_silver.station_alias AS alias
-        GROUP BY alias.station_code
-    ) AS code_location
-        ON code_location.station_code = metadata.station_code
-    JOIN layer_gold.dim_reporting_location AS location
-        ON location.location_id = code_location.location_id
+    JOIN layer_gold.dim_station AS station
+        ON station.station_code = metadata.station_code
     ORDER BY metadata.station_code, metadata.valid_from;
 
     INSERT INTO layer_gold.fact_weather_daily (
-        date_key, station_key,
+        date_key, station_key, station_version_key,
         max_air_temperature_c, min_air_temperature_c, avg_air_temperature_c,
         min_ground_temperature_c, precipitation_total_mm, precipitation_type,
         snow_depth_cm, snow_water_equivalent_mm_cm, sunshine_duration_h,
@@ -693,7 +722,8 @@ BEGIN
     )
     SELECT
         date_dimension.date_key,
-        station_dimension.station_key,
+        station.station_key,
+        station_version.station_version_key,
         weather.max_air_temperature_c,
         weather.min_air_temperature_c,
         weather.avg_air_temperature_c,
@@ -736,12 +766,14 @@ BEGIN
     FROM layer_silver.weather_daily AS weather
     JOIN layer_gold.dim_date AS date_dimension
         ON date_dimension.full_date = weather.observation_date
-    JOIN layer_gold.dim_station AS station_dimension
-        ON station_dimension.station_code = weather.station_code
-       AND weather.observation_date >= station_dimension.valid_from
+    JOIN layer_gold.dim_station AS station
+        ON station.station_code = weather.station_code
+    JOIN layer_gold.dim_station_version AS station_version
+        ON station_version.station_key = station.station_key
+       AND weather.observation_date >= station_version.valid_from
        AND (
-            station_dimension.valid_to IS NULL
-            OR weather.observation_date <= station_dimension.valid_to
+            station_version.valid_to IS NULL
+            OR weather.observation_date <= station_version.valid_to
        );
 
     INSERT INTO layer_gold.fact_weather_station_year (
@@ -872,12 +904,7 @@ BEGIN
         END
     FROM quality
     JOIN layer_gold.dim_station AS station
-        ON station.station_code = quality.station_code
-       AND make_date(quality.year, 1, 1) >= station.valid_from
-       AND (
-            station.valid_to IS NULL
-            OR make_date(quality.year, 1, 1) <= station.valid_to
-       );
+        ON station.station_code = quality.station_code;
 END;
 $$;
 
