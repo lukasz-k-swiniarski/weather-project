@@ -1,9 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.1.0/schema.json",
   "pageOrder": [
-    "abef0bd58f60f0782d15",
-    "temperature-extremes",
-    "data-quality"
+    "abef0bd58f60f0782d15"
   ],
   "activePageName": "abef0bd58f60f0782d15"
 }
