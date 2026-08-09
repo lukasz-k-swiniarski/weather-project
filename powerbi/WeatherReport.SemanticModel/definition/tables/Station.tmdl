@@ -15,43 +15,11 @@ table Station
 		summarizeBy: none
 		sourceColumn: station_code
 
-	column official_station_name
+	column station_name
 		dataType: string
 		lineageTag: f4cb0837-8c03-4d15-8c96-170f9c85aedc
 		summarizeBy: none
-		sourceColumn: official_station_name
-
-	column valid_from
-		dataType: dateTime
-		formatString: yyyy-mm-dd
-		lineageTag: 9de4e22c-3633-45bb-88d6-5bb83fbe27b5
-		summarizeBy: none
-		sourceColumn: valid_from
-
-	column valid_to
-		dataType: dateTime
-		formatString: yyyy-mm-dd
-		lineageTag: 895ed838-aa58-41ac-aecd-1a3a45c12c5d
-		summarizeBy: none
-		sourceColumn: valid_to
-
-	column is_current
-		dataType: boolean
-		lineageTag: e3df91af-1ff0-4443-8d4f-d6a35b7e9282
-		summarizeBy: none
-		sourceColumn: is_current
-
-	column station_type
-		dataType: string
-		lineageTag: 2489beb7-7b3c-40c5-977e-e915228ee0ba
-		summarizeBy: none
-		sourceColumn: station_type
-
-	column data_rank
-		dataType: string
-		lineageTag: 9515db16-9288-40bd-b393-855245784622
-		summarizeBy: none
-		sourceColumn: data_rank
+		sourceColumn: station_name
 
 	column location_key
 		dataType: int64
@@ -60,41 +28,12 @@ table Station
 		summarizeBy: none
 		sourceColumn: location_key
 
-	column latitude
-		dataType: double
-		formatString: 0.000000
-		lineageTag: 5d51f189-1885-4bab-b2f3-e8e6aa1f0779
-		dataCategory: Latitude
-		summarizeBy: none
-		sourceColumn: latitude
-
-	column longitude
-		dataType: double
-		formatString: 0.000000
-		lineageTag: 4ab5a65b-caee-493b-8751-de9301f9a353
-		dataCategory: Longitude
-		summarizeBy: none
-		sourceColumn: longitude
-
-	column elevation_m
-		dataType: double
-		formatString: 0.0
-		lineageTag: b0e0ff06-edd7-4215-95ff-cf2474dd57d1
-		summarizeBy: none
-		sourceColumn: elevation_m
-
-	column metadata_status
-		dataType: string
-		lineageTag: 91032fa1-1238-4aed-9cc2-21f24fb9b107
-		summarizeBy: none
-		sourceColumn: metadata_status
-
 	partition Station = m
 		mode: import
 		source =
 				let
 				    Server = DatabaseServer & ":" & Text.From(DatabasePort),
-				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT station_key, station_code, official_station_name, valid_from, valid_to, is_current, station_type, data_rank, location_key, latitude, longitude, elevation_m, metadata_status FROM layer_gold.dim_station", null, [EnableFolding=true])
+				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT station_key, station_code, station_name, location_key FROM layer_gold.dim_station", null, [EnableFolding=true])
 				in
 				    Source
 

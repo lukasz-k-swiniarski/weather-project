@@ -18,7 +18,7 @@ IMGW website
 versioned station reference data
     -> SQL procedures
     -> layer_silver.weather_daily
-    -> layer_gold conformed date, year, station and reporting-location dimensions
+    -> layer_gold conformed date, year, stable-station, station-version and reporting-location dimensions
     -> layer_gold.fact_weather_daily + layer_gold.fact_weather_station_year
 ```
 

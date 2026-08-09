@@ -12,10 +12,12 @@ from changing a result silently.
 station_key + calendar_year
 ```
 
-`station_code` identifies a physical IMGW series. Reporting geography is supplied by
+`station_key` identifies one stable physical IMGW series and does not change when its name or
+metadata changes. Reporting geography is supplied by
 `layer_gold.dim_reporting_location`, whose grain is one stable project reporting location.
-The annual fact resolves each station-year to the station dimension version valid on the first
-day of that calendar year and stores its surrogate `station_key`.
+Historical metadata versions are stored separately in `layer_gold.dim_station_version` and are
+used only by the daily fact. This keeps a station-year complete when a version starts or ends
+during the year and retains partial first or final station-years for quality monitoring.
 `layer_gold.dim_year` provides the conformed one-side relationship to both annual rows and daily
 dates.
 

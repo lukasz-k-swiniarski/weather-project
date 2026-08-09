@@ -45,6 +45,14 @@ def test_power_bi_model_has_conformed_dimensions_and_facts():
     assert "annual_to_station" in relationships
     assert "annual_to_location" not in relationships
 
+    station = (MODEL_DIR / "tables" / "Station.tmdl").read_text(encoding="utf-8")
+    daily = (MODEL_DIR / "tables" / "Daily Weather.tmdl").read_text(
+        encoding="utf-8"
+    )
+    assert "station_version_key" in daily
+    assert "valid_from" not in station
+    assert "FROM layer_gold.dim_station" in station
+
 
 def test_power_bi_metrics_use_explicit_quality_aware_definitions():
     metrics = (MODEL_DIR / "tables" / "Metrics.tmdl").read_text(encoding="utf-8")
@@ -61,6 +69,7 @@ def test_power_bi_metrics_use_explicit_quality_aware_definitions():
     )
     assert "SUM('Station Year Weather'[avg_temperature_days])" in metrics
     assert "SUM('Station Year Weather'[precipitation_observed_days])" in metrics
+    assert "DISTINCTCOUNT(Station[station_key])" in metrics
     assert "\n\tisHidden\n" in daily_fact
     assert "\n\tisHidden\n" in annual_fact
 
