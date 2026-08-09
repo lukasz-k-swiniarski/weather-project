@@ -23,10 +23,10 @@ repository.
 The model imports only curated Gold-layer tables:
 
 - `Year` and `Date` are conformed calendar dimensions;
-- `Station` is the versioned station dimension;
+- `Station` contains one stable row per IMGW station series;
 - `Reporting Location` contains the reporting geography, including voivodeships;
 - `Daily Weather` has one row per station and observation date;
-- `Station Year Weather` has one row per station version and year;
+- `Station Year Weather` has one row per stable station and year;
 - `Metrics` contains explicit DAX measures used by visuals.
 
 Relationships are single-direction, one-to-many relationships from dimensions to
@@ -36,14 +36,24 @@ Annual measures consume the quality-gated annual fact. A value that does not sat
 the warehouse completeness contract remains blank instead of being presented as a
 complete annual result.
 
-## Report pages
+## Report page
 
-- **Weather Overview** — annual mean temperature and ten-year moving average,
-  filterable by year and voivodeship.
-- **Temperature and Snow Extremes** — annual high and low temperature series.
-- **Data Quality** — annual temperature and precipitation coverage.
+The user-facing report is intentionally a single 1280x720 page named **Main**. It restores the
+original portfolio layout while binding every visual to the curated dimensional model:
 
-The geographic map is intentionally deferred until the final package.
+- voivodeship cards, year range and location-type slicers;
+- annual mean temperature and ten-year moving-average trend;
+- annual precipitation per station;
+- a voivodeship/location/year temperature matrix;
+- annual hot-day, cold-night and snow-cover summaries.
+
+The original precipitation-type selector was not retained semantically because a daily
+precipitation classification cannot uniquely classify a station-year total. Its compact visual
+slot now filters the stable `location_type` dimension. This preserves the one-page composition
+without publishing a misleading split of the annual precipitation metric.
+
+Quality and reportability measures remain available in the semantic model and enforce blank
+annual values below the warehouse threshold. A geographic map remains outside the current scope.
 
 ## Distribution
 

@@ -27,6 +27,26 @@ table Year
 		summarizeBy: none
 		sourceColumn: is_complete_year
 
+	column 'Time Range' =
+			VAR YearValue = Year[year]
+			VAR EndYear =
+			    MAXX(
+			        FILTER(ALL(Year), Year[is_complete_year] = TRUE()),
+			        Year[year]
+			    )
+			VAR StartYear = MINX(ALL(Year), Year[year])
+			VAR BucketEnd = EndYear - INT((EndYear - YearValue) / 10) * 10
+			VAR BucketStart = BucketEnd - 9
+			RETURN
+			    IF(
+			        YearValue < StartYear || YearValue > EndYear,
+			        BLANK(),
+			        FORMAT(BucketStart, "0") & "-" & FORMAT(BucketEnd, "0")
+			    )
+		dataType: string
+		lineageTag: e3058d42-1984-43e9-a77f-e01c86f7f5b3
+		summarizeBy: none
+
 	partition Year = m
 		mode: import
 		source =
