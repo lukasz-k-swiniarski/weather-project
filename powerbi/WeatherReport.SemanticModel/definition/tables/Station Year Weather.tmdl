@@ -27,6 +27,20 @@ table 'Station Year Weather'
 		summarizeBy: none
 		sourceColumn: observation_days
 
+	column avg_temperature_days
+		dataType: int64
+		isHidden
+		lineageTag: 30720187-a15f-4d25-82b3-68f669a92d38
+		summarizeBy: none
+		sourceColumn: avg_temperature_days
+
+	column precipitation_observed_days
+		dataType: int64
+		isHidden
+		lineageTag: e419bdd8-6906-491c-8cc2-a434014f5408
+		summarizeBy: none
+		sourceColumn: precipitation_observed_days
+
 	column avg_temperature_coverage
 		dataType: decimal
 		formatString: 0.0%
@@ -161,7 +175,7 @@ table 'Station Year Weather'
 		source =
 				let
 				    Server = DatabaseServer & ":" & Text.From(DatabasePort),
-				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT station_key, year, expected_days, observation_days, avg_temperature_coverage, max_temperature_coverage, min_temperature_coverage, precipitation_coverage, snow_cover_coverage, is_complete_year, is_avg_temperature_reportable, is_max_temperature_reportable, is_min_temperature_reportable, is_precipitation_reportable, is_snow_cover_reportable, annual_avg_air_temperature_c, annual_max_air_temperature_c, annual_min_air_temperature_c, annual_precipitation_total_mm, hot_days_ge_30_c, very_hot_days_ge_35_c, cold_nights_le_minus_20_c, very_cold_nights_le_minus_25_c, snow_cover_days FROM layer_gold.fact_weather_station_year", null, [EnableFolding=true])
+				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT station_key, year, expected_days, observation_days, avg_temperature_days, precipitation_observed_days, avg_temperature_coverage, max_temperature_coverage, min_temperature_coverage, precipitation_coverage, snow_cover_coverage, is_complete_year, is_avg_temperature_reportable, is_max_temperature_reportable, is_min_temperature_reportable, is_precipitation_reportable, is_snow_cover_reportable, annual_avg_air_temperature_c, annual_max_air_temperature_c, annual_min_air_temperature_c, annual_precipitation_total_mm, hot_days_ge_30_c, very_hot_days_ge_35_c, cold_nights_le_minus_20_c, very_cold_nights_le_minus_25_c, snow_cover_days FROM layer_gold.fact_weather_station_year", null, [EnableFolding=true])
 				in
 				    Source
 

@@ -1,4 +1,5 @@
 import os
+from datetime import date
 from pathlib import Path
 
 import psycopg2
@@ -114,7 +115,7 @@ def test_station_year_metrics_enforce_measure_specific_coverage(database):
             SELECT
                 expected_days,
                 is_complete_year,
-                precipitation_days,
+                precipitation_observed_days,
                 is_precipitation_reportable,
                 annual_precipitation_total_mm,
                 hot_days_ge_30_c,
@@ -160,3 +161,33 @@ def test_station_year_metrics_enforce_measure_specific_coverage(database):
         assert regional_metrics[0] == pytest.approx(20)
         assert regional_metrics[1] == pytest.approx(732)
         assert regional_metrics[2] == 1
+
+
+def test_silver_distinguishes_absent_precipitation_from_missing_measurement(database):
+    with database.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO layer_bronze.synop_s_d_imgw (
+                nsp, post, rok, mc, dz, smdb, wsmdb
+            )
+            VALUES
+                (100, 'STATION A', 2024, 1, 1, NULL, 9),
+                (100, 'STATION A', 2024, 1, 2, 0, 8),
+                (100, 'STATION A', 2024, 1, 3, 2.5, NULL);
+
+            CALL layer_silver.refresh();
+
+            SELECT
+                observation_date,
+                precipitation_total_mm,
+                precipitation_total_status
+            FROM layer_silver.weather_daily
+            ORDER BY observation_date;
+            """
+        )
+
+        assert cursor.fetchall() == [
+            (date(2024, 1, 1), 0.0, 9),
+            (date(2024, 1, 2), None, 8),
+            (date(2024, 1, 3), 2.5, None),
+        ]
