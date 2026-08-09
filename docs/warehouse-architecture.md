@@ -30,7 +30,8 @@ Silver:
 - gives measurements explicit names and units;
 - retains IMGW measurement statuses;
 - converts values with status `8` (missing measurement) to `NULL`;
-- retains status `9` as the explicit absence of a phenomenon;
+- normalizes a missing numeric precipitation value with status `9` to `0 mm`,
+  while retaining status `9` as the explicit absence of the phenomenon;
 - retains the secondary daily mean temperature for source reconciliation.
 
 Station reference data is separated by responsibility:

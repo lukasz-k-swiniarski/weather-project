@@ -60,7 +60,7 @@ def test_power_bi_metrics_use_explicit_quality_aware_definitions():
         in metrics
     )
     assert "SUM('Station Year Weather'[avg_temperature_days])" in metrics
-    assert "SUM('Station Year Weather'[precipitation_days])" in metrics
+    assert "SUM('Station Year Weather'[precipitation_observed_days])" in metrics
     assert "\n\tisHidden\n" in daily_fact
     assert "\n\tisHidden\n" in annual_fact
 

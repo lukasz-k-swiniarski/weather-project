@@ -107,7 +107,7 @@ table Metrics
 
 	measure 'Average Precipitation Coverage' =
 			DIVIDE(
-			    SUM('Station Year Weather'[precipitation_days]),
+			    SUM('Station Year Weather'[precipitation_observed_days]),
 			    SUM('Station Year Weather'[expected_days])
 			)
 		formatString: 0.0%
