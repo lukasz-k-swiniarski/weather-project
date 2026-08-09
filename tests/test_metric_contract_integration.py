@@ -63,7 +63,8 @@ def test_station_year_metrics_enforce_measure_specific_coverage(database):
                 station_code, station_name, observation_date,
                 avg_air_temperature_c, max_air_temperature_c,
                 min_air_temperature_c, precipitation_total_mm,
-                snow_cover_occurred
+                snow_cover_occurred_source, snow_cover_occurred,
+                snow_cover_occurrence_provenance
             )
             SELECT
                 station.station_code,
@@ -84,7 +85,9 @@ def test_station_year_metrics_enforce_measure_specific_coverage(database):
                     WHEN station.station_code = 100 AND day > DATE '2020-12-11' THEN NULL
                     ELSE 2
                 END,
-                day <= DATE '2020-01-03'
+                day <= DATE '2020-01-03',
+                day <= DATE '2020-01-03',
+                'source_occurrence'
             FROM (
                 VALUES
                     (100::bigint, 'STATION A'::text, 10::double precision),
@@ -98,10 +101,12 @@ def test_station_year_metrics_enforce_measure_specific_coverage(database):
                 station_code, station_name, observation_date,
                 avg_air_temperature_c, max_air_temperature_c,
                 min_air_temperature_c, precipitation_total_mm,
-                snow_cover_occurred
+                snow_cover_occurred_source, snow_cover_occurred,
+                snow_cover_occurrence_provenance
             )
             SELECT
-                100, 'STATION A', day::date, 99, 99, -99, 99, true
+                100, 'STATION A', day::date, 99, 99, -99, 99,
+                true, true, 'source_occurrence'
             FROM generate_series(
                 DATE '2021-01-01', DATE '2021-04-10', INTERVAL '1 day'
             ) AS days(day);
@@ -190,6 +195,43 @@ def test_silver_distinguishes_absent_precipitation_from_missing_measurement(data
             (date(2024, 1, 1), 0.0, 9),
             (date(2024, 1, 2), None, 8),
             (date(2024, 1, 3), 2.5, None),
+        ]
+
+
+def test_silver_derives_snow_occurrence_without_hiding_missing_source(database):
+    with database.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO layer_bronze.synop_s_d_imgw (
+                nsp, post, rok, mc, dz, dzps, wdzps, pksn, wpksn
+            )
+            VALUES
+                (100, 'STATION A', 2024, 1, 1, 1, NULL, NULL, NULL),
+                (100, 'STATION A', 2024, 1, 2, 0, NULL, NULL, NULL),
+                (100, 'STATION A', 2024, 1, 3, NULL, 9, 5, NULL),
+                (100, 'STATION A', 2024, 1, 4, NULL, 9, 0, NULL),
+                (100, 'STATION A', 2024, 1, 5, NULL, 8, 5, NULL),
+                (100, 'STATION A', 2024, 1, 6, NULL, 9, NULL, 9);
+
+            CALL layer_silver.refresh();
+
+            SELECT
+                observation_date,
+                snow_cover_occurred_source,
+                snow_cover_occurred,
+                snow_cover_occurrence_provenance
+            FROM layer_silver.weather_daily
+            ORDER BY observation_date;
+            """
+        )
+
+        assert cursor.fetchall() == [
+            (date(2024, 1, 1), True, True, "source_occurrence"),
+            (date(2024, 1, 2), False, False, "source_occurrence"),
+            (date(2024, 1, 3), None, True, "inferred_from_depth"),
+            (date(2024, 1, 4), None, False, "inferred_from_depth"),
+            (date(2024, 1, 5), None, None, "unavailable"),
+            (date(2024, 1, 6), None, False, "inferred_from_depth"),
         ]
 
 

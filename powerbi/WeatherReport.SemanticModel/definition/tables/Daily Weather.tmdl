@@ -64,12 +64,26 @@ table 'Daily Weather'
 		summarizeBy: none
 		sourceColumn: snow_cover_occurred
 
+	column snow_cover_occurred_source
+		dataType: boolean
+		isHidden
+		lineageTag: 1948584c-3905-47ef-a49e-c25b06e18f32
+		summarizeBy: none
+		sourceColumn: snow_cover_occurred_source
+
+	column snow_cover_occurrence_provenance
+		dataType: string
+		isHidden
+		lineageTag: e4bda335-5ed1-4f3f-b25a-42cb0aab13c3
+		summarizeBy: none
+		sourceColumn: snow_cover_occurrence_provenance
+
 	partition 'Daily Weather' = m
 		mode: import
 		source =
 				let
 				    Server = DatabaseServer & ":" & Text.From(DatabasePort),
-				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT date_key, station_key, station_version_key, max_air_temperature_c, min_air_temperature_c, avg_air_temperature_c, precipitation_total_mm, snow_depth_cm, snow_cover_occurred FROM layer_gold.fact_weather_daily", null, [EnableFolding=true])
+				    Source = Value.NativeQuery(PostgreSQL.Database(Server, DatabaseName, [CreateNavigationProperties=false]), "SELECT date_key, station_key, station_version_key, max_air_temperature_c, min_air_temperature_c, avg_air_temperature_c, precipitation_total_mm, snow_depth_cm, snow_cover_occurred_source, snow_cover_occurred, snow_cover_occurrence_provenance FROM layer_gold.fact_weather_daily", null, [EnableFolding=true])
 				in
 				    Source
 

@@ -209,7 +209,9 @@ CREATE TABLE layer_silver.weather_daily (
     dew_duration_status layer_silver.measurement_status,
     frost_duration_h double precision,
     frost_duration_status layer_silver.measurement_status,
+    snow_cover_occurred_source boolean,
     snow_cover_occurred boolean,
+    snow_cover_occurrence_provenance text NOT NULL DEFAULT 'unavailable',
     snow_cover_occurrence_status layer_silver.measurement_status,
     lightning_occurred boolean,
     lightning_occurrence_status layer_silver.measurement_status,
@@ -238,7 +240,22 @@ CREATE TABLE layer_silver.weather_daily (
     daytime_precipitation_status layer_silver.measurement_status,
     nighttime_precipitation_mm double precision,
     nighttime_precipitation_status layer_silver.measurement_status,
-    CONSTRAINT weather_daily_pk PRIMARY KEY (station_code, observation_date)
+    CONSTRAINT weather_daily_pk PRIMARY KEY (station_code, observation_date),
+    CONSTRAINT weather_daily_snow_provenance_ck CHECK (
+        (
+            snow_cover_occurrence_provenance = 'source_occurrence'
+            AND snow_cover_occurred_source IS NOT NULL
+            AND snow_cover_occurred = snow_cover_occurred_source
+        ) OR (
+            snow_cover_occurrence_provenance = 'inferred_from_depth'
+            AND snow_cover_occurred_source IS NULL
+            AND snow_cover_occurred IS NOT NULL
+        ) OR (
+            snow_cover_occurrence_provenance = 'unavailable'
+            AND snow_cover_occurred_source IS NULL
+            AND snow_cover_occurred IS NULL
+        )
+    )
 );
 
 CREATE INDEX weather_daily_observation_date_idx
@@ -342,7 +359,9 @@ CREATE TABLE layer_gold.fact_weather_daily (
     thunderstorm_duration_h double precision,
     dew_duration_h double precision,
     frost_duration_h double precision,
+    snow_cover_occurred_source boolean,
     snow_cover_occurred boolean,
+    snow_cover_occurrence_provenance text NOT NULL DEFAULT 'unavailable',
     lightning_occurred boolean,
     ground_condition text,
     lower_isotherm_cm double precision,
@@ -363,7 +382,22 @@ CREATE TABLE layer_gold.fact_weather_daily (
         FOREIGN KEY (station_key) REFERENCES layer_gold.dim_station (station_key),
     CONSTRAINT fact_weather_daily_station_version_fk
         FOREIGN KEY (station_version_key)
-        REFERENCES layer_gold.dim_station_version (station_version_key)
+        REFERENCES layer_gold.dim_station_version (station_version_key),
+    CONSTRAINT fact_weather_daily_snow_provenance_ck CHECK (
+        (
+            snow_cover_occurrence_provenance = 'source_occurrence'
+            AND snow_cover_occurred_source IS NOT NULL
+            AND snow_cover_occurred = snow_cover_occurred_source
+        ) OR (
+            snow_cover_occurrence_provenance = 'inferred_from_depth'
+            AND snow_cover_occurred_source IS NULL
+            AND snow_cover_occurred IS NOT NULL
+        ) OR (
+            snow_cover_occurrence_provenance = 'unavailable'
+            AND snow_cover_occurred_source IS NULL
+            AND snow_cover_occurred IS NULL
+        )
+    )
 );
 
 CREATE INDEX fact_weather_daily_station_date_idx
@@ -380,7 +414,7 @@ CREATE TABLE layer_gold.fact_weather_station_year (
     max_temperature_days smallint NOT NULL,
     min_temperature_days smallint NOT NULL,
     precipitation_observed_days smallint NOT NULL,
-    snow_cover_status_days smallint NOT NULL,
+    snow_cover_observed_days smallint NOT NULL,
     avg_temperature_coverage numeric(6, 5) NOT NULL,
     max_temperature_coverage numeric(6, 5) NOT NULL,
     min_temperature_coverage numeric(6, 5) NOT NULL,
@@ -414,7 +448,7 @@ CREATE TABLE layer_gold.fact_weather_station_year (
         AND max_temperature_days BETWEEN 0 AND expected_days
         AND min_temperature_days BETWEEN 0 AND expected_days
         AND precipitation_observed_days BETWEEN 0 AND expected_days
-        AND snow_cover_status_days BETWEEN 0 AND expected_days
+        AND snow_cover_observed_days BETWEEN 0 AND expected_days
     ),
     CONSTRAINT fact_weather_station_year_coverage_ck CHECK (
         avg_temperature_coverage BETWEEN 0 AND 1
@@ -460,7 +494,8 @@ BEGIN
         thunderstorm_duration_h, thunderstorm_duration_status,
         dew_duration_h, dew_duration_status,
         frost_duration_h, frost_duration_status,
-        snow_cover_occurred, snow_cover_occurrence_status,
+        snow_cover_occurred_source, snow_cover_occurred,
+        snow_cover_occurrence_provenance, snow_cover_occurrence_status,
         lightning_occurred, lightning_occurrence_status,
         ground_condition,
         lower_isotherm_cm, lower_isotherm_status,
@@ -513,6 +548,24 @@ BEGIN
         CASE
             WHEN source.wdzps = 8 OR source.dzps NOT IN (0, 1) THEN NULL
             ELSE source.dzps = 1
+        END,
+        CASE
+            WHEN source.wdzps IS DISTINCT FROM 8 AND source.dzps IN (0, 1)
+                THEN source.dzps = 1
+            WHEN source.wdzps = 8 THEN NULL
+            WHEN source.wpksn = 8 THEN NULL
+            WHEN source.pksn > 0 THEN true
+            WHEN source.pksn = 0 OR source.wpksn = 9 THEN false
+            ELSE NULL
+        END,
+        CASE
+            WHEN source.wdzps IS DISTINCT FROM 8 AND source.dzps IN (0, 1)
+                THEN 'source_occurrence'
+            WHEN source.wdzps = 8 THEN 'unavailable'
+            WHEN source.wpksn = 8 THEN 'unavailable'
+            WHEN source.pksn >= 0 OR source.wpksn = 9
+                THEN 'inferred_from_depth'
+            ELSE 'unavailable'
         END,
         source.wdzps,
         CASE
@@ -713,7 +766,8 @@ BEGIN
         low_drifting_snow_duration_h, high_drifting_snow_duration_h, haze_duration_h,
         wind_ge_10_m_s_duration_h, wind_gt_15_m_s_duration_h,
         thunderstorm_duration_h, dew_duration_h, frost_duration_h,
-        snow_cover_occurred, lightning_occurred, ground_condition,
+        snow_cover_occurred_source, snow_cover_occurred,
+        snow_cover_occurrence_provenance, lightning_occurred, ground_condition,
         lower_isotherm_cm, upper_isotherm_cm, actinometry_j_cm2,
         avg_cloud_cover_oktas, avg_wind_speed_m_s, avg_vapour_pressure_hpa,
         avg_relative_humidity_pct, avg_station_pressure_hpa,
@@ -749,7 +803,9 @@ BEGIN
         weather.thunderstorm_duration_h,
         weather.dew_duration_h,
         weather.frost_duration_h,
+        weather.snow_cover_occurred_source,
         weather.snow_cover_occurred,
+        weather.snow_cover_occurrence_provenance,
         weather.lightning_occurred,
         weather.ground_condition,
         weather.lower_isotherm_cm,
@@ -779,7 +835,7 @@ BEGIN
     INSERT INTO layer_gold.fact_weather_station_year (
         station_key, year, expected_days, observation_days,
         avg_temperature_days, max_temperature_days, min_temperature_days,
-        precipitation_observed_days, snow_cover_status_days,
+        precipitation_observed_days, snow_cover_observed_days,
         avg_temperature_coverage, max_temperature_coverage,
         min_temperature_coverage, precipitation_coverage, snow_cover_coverage,
         is_complete_year,
@@ -806,7 +862,7 @@ BEGIN
             count(weather.min_air_temperature_c)::smallint AS min_temperature_days,
             count(weather.precipitation_total_mm)::smallint
                 AS precipitation_observed_days,
-            count(weather.snow_cover_occurred)::smallint AS snow_cover_status_days,
+            count(weather.snow_cover_occurred)::smallint AS snow_cover_observed_days,
             avg(weather.avg_air_temperature_c) AS raw_avg_air_temperature_c,
             max(weather.max_air_temperature_c) AS raw_max_air_temperature_c,
             min(weather.min_air_temperature_c) AS raw_min_air_temperature_c,
@@ -840,7 +896,7 @@ BEGIN
                 / station_year.expected_days AS min_temperature_coverage,
             station_year.precipitation_observed_days::numeric
                 / station_year.expected_days AS precipitation_coverage,
-            station_year.snow_cover_status_days::numeric
+            station_year.snow_cover_observed_days::numeric
                 / station_year.expected_days AS snow_cover_coverage,
             make_date(station_year.year + 1, 1, 1) - 1 <= last_date AS is_complete_year
         FROM station_year
@@ -854,7 +910,7 @@ BEGIN
         quality.max_temperature_days,
         quality.min_temperature_days,
         quality.precipitation_observed_days,
-        quality.snow_cover_status_days,
+        quality.snow_cover_observed_days,
         quality.avg_temperature_coverage,
         quality.max_temperature_coverage,
         quality.min_temperature_coverage,
