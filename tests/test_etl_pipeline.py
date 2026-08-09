@@ -1,4 +1,4 @@
-from unittest.mock import Mock, call
+from unittest.mock import MagicMock, Mock, call
 
 import pytest
 
@@ -37,3 +37,31 @@ def test_refresh_error_is_not_suppressed():
 
     with pytest.raises(RuntimeError, match="refresh failed"):
         pipeline._refresh_db()
+
+
+def test_archive_error_stops_snapshot_collection():
+    pipeline = object.__new__(ETLPipeline)
+    pipeline.crawler = Mock()
+    pipeline.downloader = Mock()
+    pipeline.extractor = Mock()
+    source_file = Mock(url="https://example.test/weather.zip")
+    source = Mock(files=[source_file])
+    pipeline.crawler.crawl.return_value = {"2026": source}
+    pipeline.downloader.download.side_effect = RuntimeError("broken archive")
+
+    with pytest.raises(RuntimeError, match="broken archive"):
+        pipeline._collect_files()
+
+    pipeline.extractor.extract.assert_not_called()
+
+
+def test_bronze_datasets_are_uploaded_as_one_snapshot():
+    pipeline = object.__new__(ETLPipeline)
+    pipeline.db = Mock()
+    datasets = {"primary": MagicMock(), "secondary": MagicMock()}
+    for dataframe in datasets.values():
+        dataframe.__len__.return_value = 1
+
+    pipeline._load_to_db(datasets)
+
+    pipeline.db.upload_dataframes.assert_called_once_with(datasets)

@@ -88,22 +88,25 @@ class ETLPipeline:
 
         logger.info(f"Crawler returned {len(files_dict)} sources")
 
+        if not files_dict:
+            raise RuntimeError("Crawler returned no source archives")
+
         for source_name, dataset in files_dict.items():
             logger.info(f"Processing source: {source_name}")
 
             for file in dataset.files:
-                try:
-                    logger.debug(f"Downloading file: {file.url}")
+                logger.debug("Downloading file: %s", file.url)
+                zip_path = self.downloader.download(file.url)
+                extracted_files = self.extractor.extract(zip_path)
+                logger.debug(
+                    "Extracted %s files from %s",
+                    len(extracted_files),
+                    file.url,
+                )
+                all_files.extend(extracted_files)
 
-                    zip_path = self.downloader.download(file.url)
-                    extracted_files = self.extractor.extract(zip_path)
-
-                    logger.debug(f"Extracted {len(extracted_files)} files from {file.url}")
-
-                    all_files.extend(extracted_files)
-
-                except Exception:
-                    logger.exception(f"Failed processing file: {file.url}")
+        if not all_files:
+            raise RuntimeError("Source archives produced no files")
 
         logger.info(f"Collected total files: {len(all_files)}")
         return all_files
@@ -117,20 +120,14 @@ class ETLPipeline:
     def _load_to_db(self, dataframes: dict[str, DataFrame]):
         logger.info("Starting DB load phase")
 
-        for key, df in dataframes.items():
-            table_name = key
+        if not dataframes:
+            raise RuntimeError("Parser returned no datasets")
 
-            try:
-                logger.info(f"Uploading dataset: {key} -> {table_name}")
-                logger.debug(f"Rows: {len(df)}")
+        for table_name, dataframe in dataframes.items():
+            logger.info("Prepared dataset: %s (%s rows)", table_name, len(dataframe))
 
-                self.db.upload_dataframe(df, table_name)
-
-                logger.info(f"Successfully loaded: {key}")
-
-            except Exception:
-                logger.exception(f"Failed loading dataset: {key}")
-                raise
+        self.db.upload_dataframes(dataframes)
+        logger.info("Atomically replaced %s Bronze datasets", len(dataframes))
 
     def _refresh_db(self):
         logger.info("Starting exec procedures...")
