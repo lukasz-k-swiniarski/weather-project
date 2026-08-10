@@ -36,11 +36,9 @@ def test_station_year_metrics_enforce_measure_specific_coverage(database):
         cursor.execute(
             """
             INSERT INTO layer_silver.station_reporting_location (
-                location_id, location_name, location_type, voivodeship,
-                source_url, source_as_of
+                location_id, location_name, location_type, voivodeship
             )
-            VALUES ('LOC001', 'Test City', 'city', 'Test Voivodeship',
-                    'https://example.test', DATE '2026-01-01');
+            VALUES ('LOC001', 'Test City', 'city', 'Test Voivodeship');
 
             INSERT INTO layer_silver.station_alias (
                 station_name, station_code, location_id
@@ -240,11 +238,9 @@ def test_station_year_uses_stable_station_across_metadata_versions(database):
         cursor.execute(
             """
             INSERT INTO layer_silver.station_reporting_location (
-                location_id, location_name, location_type, voivodeship,
-                source_url, source_as_of
+                location_id, location_name, location_type, voivodeship
             )
-            VALUES ('LOC001', 'Test City', 'city', 'Test Voivodeship',
-                    'https://example.test', DATE '2026-01-01');
+            VALUES ('LOC001', 'Test City', 'city', 'Test Voivodeship');
 
             INSERT INTO layer_silver.station_alias (
                 station_name, station_code, location_id
