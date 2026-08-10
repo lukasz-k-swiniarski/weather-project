@@ -36,16 +36,12 @@ updated and may be supplemented when new historical information becomes availabl
 
 `station_reporting_location.csv` is a project-owned reporting contract. It consolidates station
 aliases into stable locations and assigns each location to one of Poland's 16 contemporary
-voivodeships. The assignments are reviewed against the current GUS TERYT register. `source_url`
-and `source_as_of` preserve the administrative classification provenance:
-
-```text
-https://eteryt.stat.gov.pl/eTeryt/rejestr_teryt/teryt_rejestr.aspx
-```
+voivodeships. The mapping is manually maintained specifically for this project's reporting needs
+and is not sourced from, or presented as, an official administrative register.
 
 This classification answers the current BI question, "Which voivodeship is this reporting
 location in?" It must not be interpreted as a reconstruction of administrative boundaries for
-the historical observation date.
+the historical observation date or as an authoritative geographic classification.
 
 ## Dimensional behavior
 

@@ -16,8 +16,6 @@ VALID_LOCATION = {
     "location_name": ["WARSZAWA"],
     "location_type": ["miasto"],
     "voivodeship": ["mazowieckie"],
-    "source_url": ["https://eteryt.stat.gov.pl/"],
-    "source_as_of": ["2026-01-01"],
 }
 VALID_METADATA = {
     "station_code": [352200375],

@@ -10,8 +10,6 @@ class ReferenceDataLoader:
         "location_name",
         "location_type",
         "voivodeship",
-        "source_url",
-        "source_as_of",
     )
     METADATA_COLUMNS = (
         "station_code",
@@ -81,10 +79,6 @@ class ReferenceDataLoader:
         metadata["source_retrieved_at"] = pd.to_datetime(
             metadata["source_retrieved_at"]
         ).dt.date
-        locations["source_as_of"] = pd.to_datetime(
-            locations["source_as_of"]
-        ).dt.date
-
         tables = {
             "station_reporting_location": locations,
             "station_metadata_history": metadata,
@@ -156,13 +150,6 @@ class ReferenceDataLoader:
                 "Reporting locations contain invalid voivodeships: "
                 + ", ".join(sorted(invalid))
             )
-        source_as_of = pd.to_datetime(
-            locations["source_as_of"],
-            errors="coerce",
-        )
-        if source_as_of.isna().any():
-            raise ValueError("Reporting locations contain invalid source_as_of dates")
-
     def _validate_metadata(self, metadata: pd.DataFrame) -> None:
         metadata["station_code"] = self._numeric_column(metadata, "station_code")
         for column in ("latitude", "longitude", "elevation_m"):
