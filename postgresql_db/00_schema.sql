@@ -114,14 +114,12 @@ CREATE TABLE layer_silver.station_alias (
 CREATE INDEX station_alias_station_code_idx
     ON layer_silver.station_alias (station_code);
 
--- Contemporary reporting geography used by Power BI.
+-- Project-maintained reporting geography used by Power BI.
 CREATE TABLE layer_silver.station_reporting_location (
     location_id text PRIMARY KEY,
     location_name text NOT NULL UNIQUE,
     location_type text NOT NULL,
-    voivodeship text NOT NULL,
-    source_url text NOT NULL,
-    source_as_of date NOT NULL
+    voivodeship text NOT NULL
 );
 
 ALTER TABLE layer_silver.station_alias
