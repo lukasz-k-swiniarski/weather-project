@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "8cc6add46832a25cb09e",
   "position": {
-    "x": 8.0412371134020617,
-    "y": 217.73195876288659,
+    "x": 8.0597014925373127,
+    "y": 208.65671641791045,
     "z": 0,
-    "height": 289.48453608247422,
-    "width": 707.01030927835052,
+    "height": 298.20895522388059,
+    "width": 706.56716417910445,
     "tabOrder": 0
   },
   "visual": {
@@ -95,25 +95,35 @@
           "properties": {
             "start": {
               "expr": {
-                "Measure": {
+                "Aggregation": {
                   "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Year"
+                        }
+                      },
+                      "Property": "year"
                     }
                   },
-                  "Property": "Latest Complete Year"
+                  "Function": 3
                 }
               }
             },
             "end": {
               "expr": {
-                "Measure": {
+                "Aggregation": {
                   "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Year"
+                        }
+                      },
+                      "Property": "year"
                     }
                   },
-                  "Property": "Latest Complete Year"
+                  "Function": 4
                 }
               }
             },
@@ -176,30 +186,6 @@
               "expr": {
                 "Literal": {
                   "Value": "9D"
-                }
-              }
-            },
-            "end": {
-              "expr": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
-                    }
-                  },
-                  "Property": "Annual Highest Temperature"
-                }
-              }
-            },
-            "start": {
-              "expr": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
-                    }
-                  },
-                  "Property": "Annual Lowest Temperature"
                 }
               }
             }
@@ -483,7 +469,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Annual Mean Temperature and 10-Year Trend'"
+                  "Value": "'Annual Average Temperature and 10-Year Trend'"
                 }
               }
             }

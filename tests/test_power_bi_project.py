@@ -101,18 +101,17 @@ def test_power_bi_report_pages_and_references_are_valid():
     assert "Temperature (°C)" in versioned_text
 
 
-def test_power_bi_restores_the_legacy_one_page_layout_with_curated_fields():
+def test_power_bi_uses_the_approved_one_page_layout_with_curated_fields():
     page_dir = REPORT_DIR / "pages" / "abef0bd58f60f0782d15"
     expected_visuals = {
-        "b28246943cded07ea3d0": ("actionButton", 0, 0),
-        "d0f261a68ae24d609197": ("advancedSlicerVisual", 0, 40.206185567010309),
-        "84d7a44ee36d4f30aad3": ("slicer", 1119.5876288659795, 62.47422680412371),
-        "f2c53bd691794c57b0ea": ("slicer", 0, 138.55670103092783),
-        "ffa450ba029403da5ecb": ("tableEx", 715.0515463917526, 140.41237113402062),
-        "8cc6add46832a25cb09e": ("lineChart", 8.041237113402062, 217.73195876288659),
-        "8894aa968cc07290e215": ("pivotTable", 715.0515463917526, 309.2783505154639),
+        "d0f261a68ae24d609197": ("advancedSlicerVisual", 0, 12.53731343283582),
+        "84d7a44ee36d4f30aad3": ("slicer", 1112.5581395348838, 20.465116279069768),
+        "f2c53bd691794c57b0ea": ("slicer", 0, 102.08955223880596),
+        "ffa450ba029403da5ecb": ("tableEx", 714.6268656716418, 114.6268656716418),
+        "8cc6add46832a25cb09e": ("lineChart", 8.059701492537313, 208.65671641791045),
+        "8894aa968cc07290e215": ("pivotTable", 714.6268656716418, 307.16417910447763),
         "27c19083e5b435a2ff9e": ("columnChart", 8.041237113402062, 507.21649484536084),
-        "d4566e4d36994561748a": ("textbox", 698.5074626865671, 679.7014925373135),
+        "d4566e4d36994561748a": ("textbox", 714.6268656716418, 672.5373134328358),
     }
 
     actual = {}
