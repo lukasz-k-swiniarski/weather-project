@@ -5,6 +5,7 @@ relationship daily_to_date
 relationship daily_to_station
 	fromColumn: 'Daily Weather'.station_key
 	toColumn: Station.station_key
+
 relationship station_to_location
 	fromColumn: Station.location_key
 	toColumn: 'Reporting Location'.location_key

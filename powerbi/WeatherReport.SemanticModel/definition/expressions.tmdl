@@ -1,8 +1,14 @@
 expression DatabaseServer = "localhost" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
 	lineageTag: 850f2440-5473-4226-9d40-01c5a652db53
 
+	annotation PBI_ResultType = Text
+
 expression DatabasePort = 5432 meta [IsParameterQuery=true, Type="Number", IsParameterQueryRequired=true]
 	lineageTag: 7d680795-fcac-4445-aa32-6f70ba1c0d85
 
+	annotation PBI_ResultType = Number
+
 expression DatabaseName = "weather_db" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
 	lineageTag: 932036e8-8712-4c29-9f88-a662cf254982
+
+	annotation PBI_ResultType = Text

@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "ffa450ba029403da5ecb",
   "position": {
-    "x": 715.0515463917526,
-    "y": 140.41237113402062,
-    "z": 2000,
-    "height": 168.86597938144328,
-    "width": 368.0412371134021,
-    "tabOrder": 2000
+    "x": 714.62686567164178,
+    "y": 114.6268656716418,
+    "z": 1000,
+    "height": 169.25373134328359,
+    "width": 448.65671641791045,
+    "tabOrder": 1000
   },
   "visual": {
     "visualType": "tableEx",
@@ -41,8 +41,8 @@
                 }
               },
               "queryRef": "Metrics.Average Hot Days (>=30 °C)",
-              "nativeQueryRef": "cnt_days_tmax_o30",
-              "displayName": "T ≥ 30°C"
+              "nativeQueryRef": "Tmax ≥ 30°C",
+              "displayName": "Tmax ≥ 30°C"
             },
             {
               "field": {
@@ -56,8 +56,8 @@
                 }
               },
               "queryRef": "Metrics.Average Very Hot Days (>=35 °C)",
-              "nativeQueryRef": "cnt_days_tmax_o35",
-              "displayName": "T ≥ 35°C"
+              "nativeQueryRef": "Tmax ≥ 35°C",
+              "displayName": "Tmax ≥ 35°C"
             },
             {
               "field": {
@@ -71,8 +71,8 @@
                 }
               },
               "queryRef": "Metrics.Average Cold Nights (<=-20 °C)",
-              "nativeQueryRef": "T ≤ -20°C",
-              "displayName": "T ≤ -20°C"
+              "nativeQueryRef": "Tmin ≤ -20°C",
+              "displayName": "Tmin ≤ -20°C"
             },
             {
               "field": {
@@ -86,8 +86,8 @@
                 }
               },
               "queryRef": "Metrics.Average Very Cold Nights (<=-25 °C)",
-              "nativeQueryRef": "T ≤ -25°C",
-              "displayName": "T ≤ -25°C"
+              "nativeQueryRef": "Tmin ≤ -25°C",
+              "displayName": "Tmin ≤ -25°C"
             },
             {
               "field": {
@@ -721,7 +721,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Number of Days with'"
+                  "Value": "'Annual Average Number of Days with'"
                 }
               }
             }

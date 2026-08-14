@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "d4566e4d36994561748a",
   "position": {
-    "x": 698.50746268656712,
-    "y": 679.70149253731347,
-    "z": 8000,
-    "height": 40.298507462686565,
-    "width": 581.19402985074623,
-    "tabOrder": 8000
+    "x": 714.62686567164178,
+    "y": 672.53731343283584,
+    "z": 7000,
+    "height": 47.462686567164177,
+    "width": 565.07462686567158,
+    "tabOrder": 7000
   },
   "visual": {
     "visualType": "textbox",
@@ -19,10 +19,21 @@
               {
                 "textRuns": [
                   {
-                    "value": "Źródłem pochodzenia danych jest Instytut Meteorologii i Gospodarki Wodnej – Państwowy Instytut Badawczy",
+                    "value": "*Źródłem pochodzenia danych jest Instytut Meteorologii i Gospodarki Wodnej – Państwowy Instytut Badawczy",
                     "textStyle": {
                       "fontStyle": "italic",
-                      "fontSize": "9pt"
+                      "fontSize": "8pt"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "**Dane Instytutu Meteorologii i Gospodarki Wodnej – Państwowego Instytutu Badawczego zostały przetworzone",
+                    "textStyle": {
+                      "fontStyle": "italic",
+                      "fontSize": "8pt"
                     }
                   }
                 ]

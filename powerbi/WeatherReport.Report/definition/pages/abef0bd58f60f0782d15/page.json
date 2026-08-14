@@ -5,6 +5,12 @@
   "displayOption": "FitToPage",
   "height": 720,
   "width": 1280,
+  "pageBinding": {
+    "name": "8e4fa8889641b5be0b21",
+    "type": "Default",
+    "parameters": [],
+    "referenceScope": "CrossReport"
+  },
   "objects": {
     "outspacePane": [
       {
@@ -27,19 +33,9 @@
       "type": "DataFilter"
     },
     {
-      "source": "8cc6add46832a25cb09e",
-      "target": "b28246943cded07ea3d0",
-      "type": "NoFilter"
-    },
-    {
-      "source": "ffa450ba029403da5ecb",
-      "target": "b28246943cded07ea3d0",
-      "type": "NoFilter"
-    },
-    {
       "source": "ffa450ba029403da5ecb",
       "target": "8cc6add46832a25cb09e",
-      "type": "NoFilter"
+      "type": "DataFilter"
     },
     {
       "source": "d0f261a68ae24d609197",
@@ -49,12 +45,7 @@
     {
       "source": "ffa450ba029403da5ecb",
       "target": "d0f261a68ae24d609197",
-      "type": "DataFilter"
-    },
-    {
-      "source": "d0f261a68ae24d609197",
-      "target": "b28246943cded07ea3d0",
-      "type": "NoFilter"
+      "type": "HighlightFilter"
     },
     {
       "source": "8894aa968cc07290e215",
@@ -69,7 +60,7 @@
     {
       "source": "8894aa968cc07290e215",
       "target": "8cc6add46832a25cb09e",
-      "type": "NoFilter"
+      "type": "DataFilter"
     },
     {
       "source": "d0f261a68ae24d609197",
@@ -84,17 +75,17 @@
     {
       "source": "84d7a44ee36d4f30aad3",
       "target": "8cc6add46832a25cb09e",
-      "type": "NoFilter"
+      "type": "DataFilter"
     },
     {
       "source": "84d7a44ee36d4f30aad3",
       "target": "ffa450ba029403da5ecb",
-      "type": "NoFilter"
+      "type": "DataFilter"
     },
     {
       "source": "84d7a44ee36d4f30aad3",
       "target": "8894aa968cc07290e215",
-      "type": "NoFilter"
+      "type": "DataFilter"
     },
     {
       "source": "84d7a44ee36d4f30aad3",
@@ -120,6 +111,26 @@
       "source": "27c19083e5b435a2ff9e",
       "target": "8cc6add46832a25cb09e",
       "type": "NoFilter"
+    },
+    {
+      "source": "84d7a44ee36d4f30aad3",
+      "target": "27c19083e5b435a2ff9e",
+      "type": "DataFilter"
+    },
+    {
+      "source": "ffa450ba029403da5ecb",
+      "target": "f2c53bd691794c57b0ea",
+      "type": "DataFilter"
+    },
+    {
+      "source": "ffa450ba029403da5ecb",
+      "target": "27c19083e5b435a2ff9e",
+      "type": "HighlightFilter"
+    },
+    {
+      "source": "ffa450ba029403da5ecb",
+      "target": "84d7a44ee36d4f30aad3",
+      "type": "DataFilter"
     }
   ]
 }

@@ -43,4 +43,4 @@ table 'Reporting Location'
 				in
 				    Source
 
-	annotation PBI_ResultType = Table
+	annotation PBI_ResultType = Exception
