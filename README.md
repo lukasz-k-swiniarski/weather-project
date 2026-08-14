@@ -172,6 +172,17 @@ PolyForm Noncommercial is a source-available license, not an Open Source Initiat
 source license. It applies only to the original project source code. It does not apply to IMGW-PIB
 data or other third-party materials, which remain subject to their providers' respective terms.
 
+## Third-party software
+
+This project uses third-party software and Python packages that remain subject to their
+respective licenses. They are installed separately and are not relicensed under this project's
+PolyForm Noncommercial license.
+
+Docker Desktop and Microsoft Power BI Desktop are external applications governed by their
+vendors' own licensing terms. Docker Desktop is one supported way to provide Docker with Compose
+support on Windows; users are responsible for selecting an installation appropriate to their
+environment and licensing requirements.
+
 ## Security
 
 - `.env`, downloaded data, logs, virtual environments and IDE settings are ignored by Git;
