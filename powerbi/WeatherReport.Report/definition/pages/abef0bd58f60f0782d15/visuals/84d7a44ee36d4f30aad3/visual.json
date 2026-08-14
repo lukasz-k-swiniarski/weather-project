@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "84d7a44ee36d4f30aad3",
   "position": {
-    "x": 1119.5876288659795,
-    "y": 62.47422680412371,
-    "z": 7000,
-    "height": 66.80412371134021,
-    "width": 138.55670103092783,
-    "tabOrder": 7000
+    "x": 1112.5581395348838,
+    "y": 20.465116279069768,
+    "z": 6000,
+    "height": 93.953488372093034,
+    "width": 138.6046511627907,
+    "tabOrder": 6000
   },
   "visual": {
     "visualType": "slicer",
@@ -67,7 +67,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Select precipitation type'"
+                  "Value": "'Location type'"
                 }
               }
             },
@@ -166,5 +166,23 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "aded5c50c09d5cc7c4c0",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Reporting Location"
+              }
+            },
+            "Property": "location_type"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }

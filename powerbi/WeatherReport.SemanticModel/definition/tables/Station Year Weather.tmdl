@@ -1,6 +1,6 @@
 table 'Station Year Weather'
-	lineageTag: a52feb34-4de0-437b-802c-11a4e2189ac3
 	isHidden
+	lineageTag: a52feb34-4de0-437b-802c-11a4e2189ac3
 
 	column station_key
 		dataType: int64
@@ -27,61 +27,50 @@ table 'Station Year Weather'
 		summarizeBy: none
 		sourceColumn: observation_days
 
-	column avg_temperature_days
-		dataType: int64
-		isHidden
-		lineageTag: 30720187-a15f-4d25-82b3-68f669a92d38
-		summarizeBy: none
-		sourceColumn: avg_temperature_days
-
-	column precipitation_observed_days
-		dataType: int64
-		isHidden
-		lineageTag: e419bdd8-6906-491c-8cc2-a434014f5408
-		summarizeBy: none
-		sourceColumn: precipitation_observed_days
-
 	column avg_temperature_coverage
-		dataType: decimal
+		dataType: double
 		formatString: 0.0%
 		lineageTag: 829fa4de-d10a-4877-afc2-4b5974ad034a
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: avg_temperature_coverage
 
+		annotation SummarizationSetBy = Automatic
+
 	column max_temperature_coverage
-		dataType: decimal
+		dataType: double
 		formatString: 0.0%
 		lineageTag: ef7928b1-2e91-4b1b-87bf-c1db4d651bc1
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: max_temperature_coverage
 
+		annotation SummarizationSetBy = Automatic
+
 	column min_temperature_coverage
-		dataType: decimal
+		dataType: double
 		formatString: 0.0%
 		lineageTag: 7112df79-ab47-4480-aa4a-c0b465b4a32a
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: min_temperature_coverage
 
+		annotation SummarizationSetBy = Automatic
+
 	column precipitation_coverage
-		dataType: decimal
+		dataType: double
 		formatString: 0.0%
 		lineageTag: 3b6fcf53-0a9c-4b97-a51b-e5113fc8968a
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: precipitation_coverage
 
+		annotation SummarizationSetBy = Automatic
+
 	column snow_cover_coverage
-		dataType: decimal
+		dataType: double
 		formatString: 0.0%
 		lineageTag: e641a665-461e-4226-9a37-a64750ada368
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: snow_cover_coverage
 
-	column snow_cover_observed_days
-		dataType: int64
-		isHidden
-		lineageTag: b7cd5eb1-a8bb-4b34-aae7-72fbd57103e2
-		summarizeBy: sum
-		sourceColumn: snow_cover_observed_days
+		annotation SummarizationSetBy = Automatic
 
 	column is_complete_year
 		dataType: boolean
@@ -176,6 +165,27 @@ table 'Station Year Weather'
 		lineageTag: 65e478a3-f304-407c-bb2a-963a7c880085
 		summarizeBy: none
 		sourceColumn: snow_cover_days
+
+	column avg_temperature_days
+		dataType: int64
+		isHidden
+		lineageTag: 30720187-a15f-4d25-82b3-68f669a92d38
+		summarizeBy: none
+		sourceColumn: avg_temperature_days
+
+	column precipitation_observed_days
+		dataType: int64
+		isHidden
+		lineageTag: e419bdd8-6906-491c-8cc2-a434014f5408
+		summarizeBy: none
+		sourceColumn: precipitation_observed_days
+
+	column snow_cover_observed_days
+		dataType: int64
+		isHidden
+		lineageTag: b7cd5eb1-a8bb-4b34-aae7-72fbd57103e2
+		summarizeBy: sum
+		sourceColumn: snow_cover_observed_days
 
 	partition 'Station Year Weather' = m
 		mode: import

@@ -1,6 +1,6 @@
 table 'Daily Weather'
-	lineageTag: ed55e395-775c-4dba-b220-f4b7edace996
 	isHidden
+	lineageTag: ed55e395-775c-4dba-b220-f4b7edace996
 
 	column date_key
 		dataType: int64
@@ -15,13 +15,6 @@ table 'Daily Weather'
 		lineageTag: 8a310da7-71dd-4afb-9fa8-106a664b9392
 		summarizeBy: none
 		sourceColumn: station_key
-
-	column station_version_key
-		dataType: int64
-		isHidden
-		lineageTag: d52d5e8a-7d2b-4e53-9a40-bf6b965f31f2
-		summarizeBy: none
-		sourceColumn: station_version_key
 
 	column max_air_temperature_c
 		dataType: double
@@ -63,6 +56,13 @@ table 'Daily Weather'
 		lineageTag: ed4819a9-691d-4bb5-b81e-0989e63f9b26
 		summarizeBy: none
 		sourceColumn: snow_cover_occurred
+
+	column station_version_key
+		dataType: int64
+		isHidden
+		lineageTag: d52d5e8a-7d2b-4e53-9a40-bf6b965f31f2
+		summarizeBy: none
+		sourceColumn: station_version_key
 
 	column snow_cover_occurred_source
 		dataType: boolean

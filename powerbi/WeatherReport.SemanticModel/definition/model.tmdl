@@ -8,7 +8,7 @@ model Model
 
 annotation __PBI_TimeIntelligenceEnabled = 1
 
-annotation PBI_QueryOrder = ["Year","Date","Reporting Location","Station","Daily Weather","Station Year Weather"]
+annotation PBI_QueryOrder = ["Year","Date","Reporting Location","Station","Daily Weather","Station Year Weather","DatabaseServer","DatabasePort","DatabaseName"]
 
 annotation PBI_ProTooling = ["DevMode"]
 
