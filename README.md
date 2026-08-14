@@ -157,26 +157,23 @@ values mean that the relevant data-quality and completeness contract was not met
 interpreted automatically as zero or as the absence of a meteorological phenomenon.
 
 Any future use of the source data remains subject to the current terms specified by IMGW-PIB.
-Publishing this repository does not grant additional rights to IMGW-PIB data. Any license selected
-for the original project source code applies to that code only and does not replace or override the
-data provider's terms.
+Publishing this repository does not grant additional rights to IMGW-PIB data. The MIT License
+applies to the original project source code only and does not replace or override the data
+provider's terms.
 
 ## License
 
-The original source code in this repository is licensed under the
-[PolyForm Noncommercial License 1.0.0](LICENSE). It may be used, studied, modified and distributed
-for permitted noncommercial purposes under the conditions of that license. Commercial use requires
-separate permission from the copyright holder.
-
-PolyForm Noncommercial is a source-available license, not an Open Source Initiative-approved open
-source license. It applies only to the original project source code. It does not apply to IMGW-PIB
+The original source code in this repository is licensed under the [MIT License](LICENSE).
+The MIT License applies only to the original project source code. It does not apply to IMGW-PIB
 data or other third-party materials, which remain subject to their providers' respective terms.
+Permission to use the source code does not grant permission to use IMGW-PIB data for any particular
+purpose.
 
 ## Third-party software
 
 This project uses third-party software and Python packages that remain subject to their
 respective licenses. They are installed separately and are not relicensed under this project's
-PolyForm Noncommercial license.
+MIT License.
 
 Docker Desktop and Microsoft Power BI Desktop are external applications governed by their
 vendors' own licensing terms. Docker Desktop is one supported way to provide Docker with Compose
