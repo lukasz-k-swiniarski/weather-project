@@ -1,4 +1,4 @@
-# IMGW Weather ETL
+# Synoptic data ETL
 
 Python ETL pipeline that downloads public daily meteorological data from
 [IMGW](https://danepubliczne.imgw.pl/), parses the source CSV files and loads them into a
